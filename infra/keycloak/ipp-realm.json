@@ -1,0 +1,245 @@
+{
+  "realm": "ipp",
+  "enabled": true,
+  "displayName": "Israel Permit Program (DEMO)",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 3600,
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "he",
+    "en",
+    "ru",
+    "ar"
+  ],
+  "defaultLocale": "he",
+  "roles": {
+    "realm": [
+      {
+        "name": "WORKER",
+        "description": "IPP role WORKER"
+      },
+      {
+        "name": "DRIVER",
+        "description": "IPP role DRIVER"
+      },
+      {
+        "name": "EMPLOYER",
+        "description": "IPP role EMPLOYER"
+      },
+      {
+        "name": "CROSSING_OFFICER",
+        "description": "IPP role CROSSING_OFFICER"
+      },
+      {
+        "name": "CLERK",
+        "description": "IPP role CLERK"
+      },
+      {
+        "name": "POLICY_ADMIN",
+        "description": "IPP role POLICY_ADMIN"
+      },
+      {
+        "name": "ENFORCEMENT_OFFICER",
+        "description": "IPP role ENFORCEMENT_OFFICER"
+      },
+      {
+        "name": "AUDITOR",
+        "description": "IPP role AUDITOR"
+      },
+      {
+        "name": "SYS_ADMIN",
+        "description": "IPP role SYS_ADMIN"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "ipp-web",
+      "name": "IPP Web SPA",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost",
+        "http://localhost:5173"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost/*##http://localhost:5173/*"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "worker1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Yusuf",
+      "lastName": "Demo",
+      "email": "worker1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "WORKER"
+      ]
+    },
+    {
+      "username": "driver1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Omar",
+      "lastName": "Demo",
+      "email": "driver1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DRIVER"
+      ]
+    },
+    {
+      "username": "employer1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Dana",
+      "lastName": "Demo",
+      "email": "employer1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "EMPLOYER"
+      ]
+    },
+    {
+      "username": "officer1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Avi",
+      "lastName": "Demo",
+      "email": "officer1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CROSSING_OFFICER"
+      ]
+    },
+    {
+      "username": "clerk1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Noa",
+      "lastName": "Demo",
+      "email": "clerk1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CLERK"
+      ]
+    },
+    {
+      "username": "policy1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Lior",
+      "lastName": "Demo",
+      "email": "policy1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "POLICY_ADMIN"
+      ]
+    },
+    {
+      "username": "enforcer1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Gil",
+      "lastName": "Demo",
+      "email": "enforcer1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ENFORCEMENT_OFFICER"
+      ]
+    },
+    {
+      "username": "auditor1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Rina",
+      "lastName": "Demo",
+      "email": "auditor1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "AUDITOR"
+      ]
+    },
+    {
+      "username": "admin1",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Eli",
+      "lastName": "Demo",
+      "email": "admin1@ipp-demo.example",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "SYS_ADMIN"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+title = "ipp gitleaks"
+[extend]
+useDefault = true
+[allowlist]
+description = "documented throwaway dev defaults and public demo keys"
+paths = [
+  '''\.env\.example$''',
+  '''infra/keycloak/ipp-realm\.json$''',
+  '''infra/nifi/keys/.*\.pub\.pem$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)target/''',
+  '''(^|/)\.git/''',
+]

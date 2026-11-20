@@ -1,0 +1,20 @@
+# secrets
+.env
+*.pem
+*.key
+!infra/nifi/keys/*.pub.pem
+# build
+target/
+dist/
+build/
+node_modules/
+coverage/
+*.log
+.idea/
+.vscode/
+# runtime data
+ingest/inbox/*
+ingest/quarantine/*
+ingest/archive/*
+!ingest/**/.gitkeep
+.offline-bundle/

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# gitleaks on staged changes (skips with a warning only if Docker is not running)
+if docker info >/dev/null 2>&1; then
+  MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.28.0 \
+    git /repo --staged --no-banner --redact --config /repo/.gitleaks.toml || { echo "✖ gitleaks: secret detected, commit blocked"; exit 1; }
+else
+  echo "⚠ docker not running – gitleaks pre-commit skipped"
+fi
