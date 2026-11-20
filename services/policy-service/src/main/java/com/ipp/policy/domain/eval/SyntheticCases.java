@@ -16,7 +16,7 @@ import java.util.SplittableRandom;
 public final class SyntheticCases {
 
     private static final String[] SECTORS = {"CONSTRUCTION", "AGRICULTURE", "INDUSTRY", "SERVICES"};
-    private static final String[] PERMIT_TYPES = {"WORK_ENTRY", "WORK_ENTRY", "WORK_ENTRY", "DRIVER_TRANSPORT", "MEDICAL", "EXIT_ABROAD"};
+    private static final String[] PERMIT_TYPES = {"WORK_ENTRY", "WORK_ENTRY", "WORK_ENTRY", "WORK_ENTRY", "DRIVER", "MEDICAL"};
     private static final String[] CARGO = {"FOOD", "CONSTRUCTION_MATERIALS", "AGRICULTURE_PRODUCE", "GENERAL_GOODS", "CHEMICALS"};
     private static final String[] REGIONS = {"JENIN", "NABLUS", "TULKARM", "QALQILYA", "RAMALLAH", "BETHLEHEM", "HEBRON", "JERICHO"};
 
@@ -33,7 +33,7 @@ public final class SyntheticCases {
         String sector = SECTORS[rnd.nextInt(SECTORS.length)];
         String type = PERMIT_TYPES[rnd.nextInt(PERMIT_TYPES.length)];
         int roll = rnd.nextInt(100);
-        String security = roll < 85 ? "CLEAR" : roll < 95 ? "REVIEW" : "DENIED";
+        String security = roll < 85 ? "CLEAR" : roll < 95 ? "PENDING" : "DENIED";
 
         Map<String, Object> person = new LinkedHashMap<>();
         person.put("age", 18 + rnd.nextInt(45));
@@ -52,8 +52,8 @@ public final class SyntheticCases {
         form.put("workRegion", person.get("region"));
         form.put("vehiclePlate", "PL-" + rnd.nextInt(99999));
         form.put("cargoType", CARGO[rnd.nextInt(CARGO.length)]);
-        form.put("crossingPoint", "CP-" + (1 + rnd.nextInt(6)));
-        form.put("hospitalReferral", "REF-" + index);
+        form.put("destinationRegion", REGIONS[rnd.nextInt(REGIONS.length)]);
+        form.put("hospitalName", "HOSPITAL-" + (1 + rnd.nextInt(5)));
         form.put("appointmentDate", today.plusDays(rnd.nextInt(-5, 45)).toString());
         form.put("passportNumber", "P" + rnd.nextInt(10_000_000));
         if (rnd.nextInt(100) < 3) form.remove("photo");             // a few incomplete applications

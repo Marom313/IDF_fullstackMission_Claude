@@ -44,8 +44,12 @@ class PolicyCatalogServiceTest {
 
     private void seedAll() {
         for (String f : PolicyTestSupport.SEED_FILES) {
-            PolicyRecord r = service.createDraft(resource(f), "test");
-            service.publish(r.name(), r.version(), "test");
+            try {
+                PolicyRecord r = service.createDraft(resource(f), "test");
+                service.publish(r.name(), r.version(), "test");
+            } catch (PolicyErrors.Conflict alreadyThere) {
+                // same as SeedPolicies on startup
+            }
         }
     }
 
@@ -127,9 +131,52 @@ class PolicyCatalogServiceTest {
         List<String> fields = service.requiredFields(new Facts(Map.of("permit", Map.of("type", "WORK_ENTRY"))));
         assertEquals(List.of("idNumber", "photo", "magneticCard", "employerId", "workRegion"), fields);
 
-        List<String> driver = service.requiredFields(new Facts(Map.of("permit", Map.of("type", "DRIVER_TRANSPORT"))));
+        List<String> driver = service.requiredFields(new Facts(Map.of("permit", Map.of("type", "DRIVER"))));
         assertTrue(driver.contains("vehiclePlate"));
         assertFalse(driver.contains("employerId"));
+    }
+
+    /** The exact nested facts permit-service on main builds (PermitService.facts). */
+    @Test
+    void factsAsSentByPermitServiceOnMain() {
+        seedAll();
+        Map<String, Object> facts = new java.util.HashMap<>();
+        facts.put("person", Map.of("age", 34, "securityStatus", "CLEAR", "region", "CENTER", "magneticCardValid", true));
+        facts.put("sanctions", Map.of("active", false));
+        facts.put("today", "2026-11-20");
+        facts.put("quotas", Map.of("CONSTRUCTION", Map.of("remaining", 10, "total", 100), "SERVICES", Map.of("remaining", 3, "total", 50)));
+        facts.put("employer", Map.of("sector", "SERVICES"));
+
+        facts.put("permit", Map.of("type", "WORK_ENTRY"));
+        facts.put("form", Map.of("idNumber", "980000123", "photo", "s3://p", "magneticCard", "MC-1", "employerId", "E", "workRegion", "CENTER"));
+        assertEquals("work-permit-general", service.evaluate(new Facts(facts)).decision().policyName());
+        assertEquals(Decision.Outcome.APPROVE, service.evaluate(new Facts(facts)).decision().outcome());
+
+        facts.put("permit", Map.of("type", "DRIVER"));
+        facts.put("form", Map.of("idNumber", "980000123", "photo", "s3://p", "magneticCard", "MC-1",
+                "vehiclePlate", "12-345-67", "cargoType", "FOOD", "destinationRegion", "CENTER"));
+        Decision driver = service.evaluate(new Facts(facts)).decision();
+        assertEquals("driver-transport", driver.policyName());
+        assertEquals(2, driver.policyVersion());
+        assertEquals(Decision.Outcome.APPROVE, driver.outcome());
+
+        facts.put("permit", Map.of("type", "MEDICAL"));
+        facts.put("person", Map.of("age", 60, "securityStatus", "PENDING", "magneticCardValid", false));
+        facts.put("form", Map.of("idNumber", "980000123", "photo", "s3://p", "hospitalName", "H-1", "appointmentDate", "2026-11-25"));
+        assertEquals(Decision.Outcome.APPROVE, service.evaluate(new Facts(facts)).decision().outcome());
+    }
+
+    @Test
+    void reseedingBumpedVersionsRetiresV1() {
+        // simulates an existing Mongo volume that already holds driver-transport v1
+        String v1 = PolicyTestSupport.resource("03-driver-transport.ipp").replace("VERSION 2", "VERSION 1")
+                .replace("permit.type == DRIVER", "permit.type == DRIVER_TRANSPORT");
+        service.publish("driver-transport", service.createDraft(v1, "old").version(), "old");
+        seedAll();
+        List<PolicyRecord> versions = service.versions("driver-transport");
+        assertEquals(PolicyStatus.ACTIVE, versions.get(0).status());
+        assertEquals(2, versions.get(0).version());
+        assertEquals(PolicyStatus.RETIRED, versions.get(1).status());
     }
 
     @Test
