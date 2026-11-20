@@ -73,7 +73,7 @@
 **בדיקות:**
 - 13 טסטים עברו (javac + JUnit stub).
 - 7 תרחישים עברו מקצה לקצה: Node → verifier.
-- **לא הורץ:** NiFi עצמו (Docker Hub חסום בענן, ראו GAPS G-31).
+- **לא הורץ:** NiFi עצמו (Docker Hub חסום בענן, ראו GAPS G-35).
 
 **⚠️ באגים ידועים שנמנעו:** ראו `docs/NIFI.md`: קובץ שנקרא בזמן כתיבה, zip bomb עם גודל מוצהר שקרי, zip slip, timing בהשוואת hash, BOM של Excel, `execution.status` כמחרוזת, וטרנזקציות של Kafka מול broker יחיד.
 

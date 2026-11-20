@@ -92,7 +92,7 @@ node scripts/ingest/make-nifi-batch.mjs overstay        # worker1 נכנס לפ�
 7. **PublishKafka ב-NiFi 2 עם `Transactions Enabled=true` (ברירת המחדל) מול broker יחיד:** ל-producer טרנזקציוני צריך `transaction.state.log.replication.factor` (ברירת מחדל 3). ב-broker יחיד הטרנזקציה לא מתחילה, וההודעות נתקעות ב-failure. אצלנו הטרנזקציות כבויות, וה-idempotency היא בצד הצרכן (inbox לפי crossingId, `_id` לפי eventId).
 8. **"execution.error" ריק:** NiFi שומר רק את ה-stderr. לכן ה-verifier כותב את הסיבה ל-stderr ואת ההודעות ל-stdout, ולעולם לא מערבב ביניהם.
 
-## מה לא נבדק חי (GAPS G-31)
+## מה לא נבדק חי (GAPS G-35)
 סביבת הענן חוסמת את Docker Hub, ולכן הזרימה ב-NiFi לא הורצה שם. מה שנבדק:
 - ה-verifier: 13 טסטים.
 - `make-nifi-batch` → verifier מקצה לקצה: 7 תרחישים.
