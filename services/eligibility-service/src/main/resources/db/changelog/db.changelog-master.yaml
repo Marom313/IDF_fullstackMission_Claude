@@ -1,0 +1,41 @@
+# eligibility-service read model. Rebuildable from Kafka (it is a projection, not a source of truth).
+databaseChangeLog:
+  - include: { file: db/changelog/common.yaml }
+  - changeSet:
+      id: eligibility-001-read-model
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table elig_person (
+                person_id uuid primary key,
+                national_id char(9) unique,
+                full_name varchar(200),
+                security_status varchar(20),
+                region varchar(30),
+                updated_at timestamptz not null
+              );
+              create table elig_permit (
+                permit_id uuid primary key,
+                person_id uuid not null,
+                type varchar(20) not null,
+                status varchar(20) not null,
+                valid_from date,
+                valid_to date,
+                region varchar(30),
+                policy_version varchar(50),
+                updated_at timestamptz not null
+              );
+              create index ix_elig_permit_person on elig_permit (person_id, valid_to desc);
+              create table elig_sanction (
+                sanction_id uuid primary key,
+                person_id uuid not null,
+                type varchar(30) not null,
+                until_date date,
+                reason varchar(300),
+                active boolean not null,
+                updated_at timestamptz not null
+              );
+              create index ix_elig_sanction_person_active on elig_sanction (person_id) where active;
+      rollback:
+        - sql: { sql: drop table elig_sanction; drop table elig_permit; drop table elig_person; }

@@ -1,0 +1,43 @@
+server:
+  port: 8080
+  shutdown: graceful
+spring:
+  application:
+    name: audit-service
+  threads:
+    virtual:
+      enabled: true
+  data:
+    mongodb:
+      uri: mongodb://audit_svc:${MONGO_AUDIT_PASSWORD}@${MONGO_HOST:mongo}:27017/ipp_audit?authSource=ipp_audit
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+    producer:
+      acks: all
+    consumer:
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+ipp:
+  security:
+    jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
+    issuer: ${JWT_ISSUER:http://localhost/auth/realms/ipp}
+  ingest:
+    quarantine-dir: /ingest/quarantine
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+springdoc:
+  api-docs:
+    path: /v3/api-docs

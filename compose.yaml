@@ -9,6 +9,22 @@ x-common: &common
     driver: json-file
     options: { max-size: "10m", max-file: "3" }
 
+x-spring-service: &spring-service
+  restart: unless-stopped
+  networks: [ipp]
+  profiles: [core]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+  mem_limit: 512m
+  cpus: 1.0
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health/readiness | grep -q UP"]
+    interval: 10s
+    timeout: 5s
+    retries: 30
+    start_period: 60s
+
 x-spring-env: &spring-env
   JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k"
   SPRING_THREADS_VIRTUAL_ENABLED: "true"
@@ -70,7 +86,11 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ipp_admin
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-    volumes: [mongodata:/data/db]
+      MONGO_AUDIT_PASSWORD: ${MONGO_AUDIT_PASSWORD}
+      MONGO_POLICY_PASSWORD: ${MONGO_POLICY_PASSWORD}
+    volumes:
+      - mongodata:/data/db
+      - ./infra/mongo/init-users.js:/docker-entrypoint-initdb.d/10-users.js:ro
     mem_limit: 512m
     cpus: 1.0
     healthcheck:
@@ -189,6 +209,112 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+
+  # ───────────────────────── migrations ─────────────────────────
+  migrate:
+    image: liquibase/liquibase:4.33.0
+    profiles: [core]
+    networks: [ipp]
+    restart: "no"
+    entrypoint: ["/bin/sh", "/migrate.sh"]
+    environment:
+      REGISTRY_DB_PASSWORD: ${REGISTRY_DB_PASSWORD}
+      PERMITS_DB_PASSWORD: ${PERMITS_DB_PASSWORD}
+      ELIGIBILITY_DB_PASSWORD: ${ELIGIBILITY_DB_PASSWORD}
+      ENFORCEMENT_DB_PASSWORD: ${ENFORCEMENT_DB_PASSWORD}
+      JAVA_OPTS: "-Xmx256m -XX:+UseSerialGC"
+    volumes:
+      - ./infra/migrate/migrate.sh:/migrate.sh:ro
+      - ./libs/java-common/src/main/resources:/changelogs/common:ro
+      - ./services/registry-service/src/main/resources:/changelogs/registry-service:ro
+      - ./services/permit-service/src/main/resources:/changelogs/permit-service:ro
+      - ./services/eligibility-service/src/main/resources:/changelogs/eligibility-service:ro
+      - ./services/enforcement-service/src/main/resources:/changelogs/enforcement-service:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+    mem_limit: 384m
+    cpus: 1.0
+
+  # ───────────────────────── domain services ─────────────────────────
+  registry-service:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: registry-service } }
+    image: ipp/registry-service:0.1.0
+    environment:
+      <<: *spring-env
+      DB_PASSWORD: ${REGISTRY_DB_PASSWORD}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    ports: ["127.0.0.1:8081:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      pgbouncer: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      seaweedfs: { condition: service_healthy }
+
+  permit-service:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: permit-service } }
+    image: ipp/permit-service:0.1.0
+    environment:
+      <<: *spring-env
+      DB_PASSWORD: ${PERMITS_DB_PASSWORD}
+    ports: ["127.0.0.1:8082:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      pgbouncer: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+
+  eligibility-service:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: eligibility-service } }
+    image: ipp/eligibility-service:0.1.0
+    environment:
+      <<: *spring-env
+      DB_PASSWORD: ${ELIGIBILITY_DB_PASSWORD}
+    # no host port: scalable with --scale eligibility-service=3 (gateway → docker DNS round-robin)
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      pgbouncer: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  enforcement-service:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: enforcement-service } }
+    image: ipp/enforcement-service:0.1.0
+    environment:
+      <<: *spring-env
+      DB_PASSWORD: ${ENFORCEMENT_DB_PASSWORD}
+    ports: ["127.0.0.1:8084:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      pgbouncer: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+
+  audit-service:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: audit-service } }
+    image: ipp/audit-service:0.1.0
+    environment:
+      <<: *spring-env
+      MONGO_AUDIT_PASSWORD: ${MONGO_AUDIT_PASSWORD}
+    ports: ["127.0.0.1:8086:8080"]
+    volumes:
+      - ./ingest/quarantine:/ingest/quarantine:ro
+    depends_on:
+      mongo: { condition: service_healthy }
+      kafka: { condition: service_healthy }
+
+  gateway:
+    <<: *spring-service
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: gateway } }
+    image: ipp/gateway:0.1.0
+    environment:
+      <<: *spring-env
+    depends_on:
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
 
   nginx:
     <<: *common

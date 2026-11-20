@@ -1,0 +1,90 @@
+# enforcement-service schema. Never edit an applied changeset – add a new one.
+databaseChangeLog:
+  - include: { file: db/changelog/common.yaml }
+  - changeSet:
+      id: enforcement-001-crossings-partitioned
+      author: ipp
+      comment: crossing_events partitioned monthly by occurred_at (+ default partition as a safety net)
+      changes:
+        - sql:
+            splitStatements: false
+            sql: >
+              create table crossing_events (
+                id uuid not null,
+                person_id uuid not null,
+                national_id char(9),
+                gate varchar(30) not null,
+                direction varchar(5) not null,
+                occurred_at timestamptz not null,
+                source varchar(60),
+                primary key (id, occurred_at)
+              ) partition by range (occurred_at);
+              create index ix_crossing_person_time on crossing_events (person_id, occurred_at desc);
+              do $$
+              declare m date := date '2026-06-01';
+              begin
+                while m < date '2027-12-01' loop
+                  execute format('create table crossing_events_%s partition of crossing_events for values from (%L) to (%L)',
+                    to_char(m, 'YYYY_MM'), m, (m + interval '1 month')::date);
+                  m := (m + interval '1 month')::date;
+                end loop;
+              end $$;
+              create table crossing_events_default partition of crossing_events default;
+      rollback:
+        - sql: { sql: drop table crossing_events cascade; }
+  - changeSet:
+      id: enforcement-002-presence-permits
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table presence (
+                person_id uuid primary key,
+                national_id char(9),
+                inside boolean not null,
+                last_crossing_at timestamptz,
+                last_entry_at timestamptz,
+                last_gate varchar(30)
+              );
+              create index ix_presence_inside on presence (last_entry_at) where inside;
+              create table permit_snapshot (
+                permit_id uuid primary key,
+                person_id uuid not null,
+                type varchar(20),
+                status varchar(20),
+                valid_from date,
+                valid_to date,
+                region varchar(30)
+              );
+              create index ix_permit_snapshot_person on permit_snapshot (person_id);
+      rollback:
+        - sql: { sql: drop table permit_snapshot; drop table presence; }
+  - changeSet:
+      id: enforcement-003-cases
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table enf_case (
+                id uuid primary key,
+                person_id uuid not null,
+                national_id char(9),
+                violation_type varchar(30) not null,
+                details varchar(500),
+                status varchar(20) not null,
+                proposed_sanction varchar(30),
+                proposed_days int,
+                sanction_id uuid,
+                sanction_until date,
+                appeal_text varchar(2000),
+                decision_note varchar(1000),
+                opened_at timestamptz not null,
+                updated_at timestamptz not null,
+                updated_by varchar(100),
+                version bigint not null default 0
+              );
+              create index ix_case_person on enf_case (person_id, violation_type, status);
+              create index ix_case_list on enf_case (opened_at desc, id desc);
+              create index ix_case_status_list on enf_case (status, opened_at desc, id desc);
+      rollback:
+        - sql: { sql: drop table enf_case; }

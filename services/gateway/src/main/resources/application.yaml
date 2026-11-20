@@ -1,0 +1,66 @@
+server:
+  port: 8080
+  shutdown: graceful
+spring:
+  application:
+    name: gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: 6379
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: RequestRateLimiter
+              args:
+                # token bucket per user (Redis). 300 req/s steady (k6 load test runs as one officer), burst 600
+                redis-rate-limiter.replenishRate: ${RATE_LIMIT_RPS:300}
+                redis-rate-limiter.burstCapacity: ${RATE_LIMIT_BURST:600}
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+          routes:
+            - id: registry
+              uri: http://registry-service:8080
+              predicates: [ "Path=/api/registry/**" ]
+            - id: permits
+              uri: http://permit-service:8080
+              predicates: [ "Path=/api/permits/**" ]
+            - id: eligibility
+              # docker DNS round-robins across --scale replicas
+              uri: http://eligibility-service:8080
+              predicates: [ "Path=/api/eligibility/**" ]
+            - id: enforcement
+              uri: http://enforcement-service:8080
+              predicates: [ "Path=/api/enforcement/**" ]
+            - id: audit
+              uri: http://audit-service:8080
+              predicates: [ "Path=/api/audit/**,/api/admin/**" ]
+            - id: policies
+              uri: http://policy-service:8080
+              predicates: [ "Path=/api/policies/**" ]
+            - id: mock-state
+              uri: http://mock-state-api:8080
+              predicates: [ "Path=/api/state/**" ]
+          httpclient:
+            connect-timeout: 1000
+            response-timeout: 10s
+ipp:
+  security:
+    jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
+    issuer: ${JWT_ISSUER:http://localhost/auth/realms/ipp}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+logging:
+  level:
+    org.apache.kafka: WARN

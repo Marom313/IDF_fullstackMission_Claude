@@ -1,0 +1,94 @@
+# permit-service schema. Never edit an applied changeset – add a new one.
+databaseChangeLog:
+  - include: { file: db/changelog/common.yaml }
+  - changeSet:
+      id: permits-001-person-ref
+      author: ipp
+      comment: read model of registry persons (fed by registry.person.upserted.v1)
+      changes:
+        - sql:
+            sql: >
+              create table person_ref (
+                person_id uuid primary key,
+                national_id char(9) not null unique,
+                full_name varchar(200),
+                birth_date date,
+                security_status varchar(20),
+                region varchar(30),
+                employer_id uuid
+              );
+      rollback:
+        - sql: { sql: drop table person_ref; }
+  - changeSet:
+      id: permits-002-license-quota
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table employment_license (
+                id uuid primary key,
+                employer_id uuid not null,
+                sector varchar(30) not null,
+                workers_quota int not null check (workers_quota >= 0),
+                workers_assigned int not null default 0 check (workers_assigned >= 0),
+                valid_to date not null,
+                status varchar(20) not null,
+                version bigint not null default 0
+              );
+              create index ix_license_employer on employment_license (employer_id) where status = 'ACTIVE';
+              create table sector_quota (
+                sector varchar(30) primary key,
+                total int not null,
+                used int not null default 0,
+                constraint ck_quota_not_exceeded check (used <= total)
+              );
+      rollback:
+        - sql: { sql: drop table sector_quota; drop table employment_license; }
+  - changeSet:
+      id: permits-003-permit
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table permit (
+                id uuid primary key,
+                person_id uuid not null,
+                national_id char(9) not null,
+                type varchar(20) not null,
+                status varchar(20) not null,
+                employer_id uuid,
+                license_id uuid references employment_license(id),
+                region varchar(30),
+                valid_from date,
+                valid_to date,
+                policy_version varchar(50),
+                recommendation varchar(30),
+                reasons jsonb not null default '[]',
+                form_data jsonb not null default '{}',
+                submitted_at timestamptz not null,
+                decided_at timestamptz,
+                decided_by varchar(100),
+                version bigint not null default 0
+              );
+              create index ix_permit_person on permit (person_id, submitted_at desc);
+              -- clerk queue (keyset on submitted_at, id) – partial index only on open applications
+              create index ix_permit_queue on permit (submitted_at, id) where status in ('SUBMITTED', 'IN_REVIEW');
+              create index ix_permit_employer on permit (employer_id, id);
+              create index ix_permit_active_valid_to on permit (valid_to) where status = 'ACTIVE';
+      rollback:
+        - sql: { sql: drop table permit; }
+  - changeSet:
+      id: permits-004-qr-key
+      author: ipp
+      comment: DEMO ONLY – production keys live in HSM/KMS (GAPS G-07)
+      changes:
+        - sql:
+            sql: >
+              create table qr_key (
+                id int primary key,
+                private_pkcs8 bytea not null,
+                public_spki bytea not null,
+                created_at timestamptz not null
+              );
+      rollback:
+        - sql: { sql: drop table qr_key; }

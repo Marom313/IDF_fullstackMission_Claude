@@ -1,0 +1,683 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8084",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/enforcement/site-checks": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "siteCheck",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SiteCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/detect-overstays": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "detect",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "integer",
+                    "format": "int32"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/crossings": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "recordCrossing",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrossingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}/sanction": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "impose",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}/dismiss": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "dismiss",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}/close": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "close",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VersionedNote"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}/appeal": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "appeal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}/appeal-decision": {
+      "post": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "decideAppeal",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppealDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/stats": {
+      "get": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "stats",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Stats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/persons/{personId}/crossings": {
+      "get": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "crossings",
+        "parameters": [
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Crossing"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/persons/{personId}/cases": {
+      "get": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "byPerson",
+        "parameters": [
+          {
+            "name": "personId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaseRecord"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases": {
+      "get": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "cases",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CasePage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/enforcement/cases/{id}": {
+      "get": {
+        "tags": [
+          "enforcement-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseRecord"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SiteCheckRequest": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "personId",
+          "region"
+        ]
+      },
+      "CaseRecord": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "violationType": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "proposedSanction": {
+            "type": "string"
+          },
+          "proposedDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sanctionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sanctionUntil": {
+            "type": "string",
+            "format": "date"
+          },
+          "appealText": {
+            "type": "string"
+          },
+          "decisionNote": {
+            "type": "string"
+          },
+          "openedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CrossingRequest": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nationalId": {
+            "type": "string",
+            "pattern": "\\d{9}"
+          },
+          "gate": {
+            "type": "string",
+            "minLength": 1
+          },
+          "direction": {
+            "type": "string",
+            "pattern": "ENTRY|EXIT"
+          }
+        },
+        "required": [
+          "gate",
+          "personId"
+        ]
+      },
+      "VersionedNote": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "AppealRequest": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "AppealDecision": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "uphold": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "uphold"
+        ]
+      },
+      "Stats": {
+        "type": "object",
+        "properties": {
+          "casesByStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          "crossings": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "Crossing": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "gate": {
+            "type": "string"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "ENTRY",
+              "EXIT"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      },
+      "CasePage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CaseRecord"
+            }
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

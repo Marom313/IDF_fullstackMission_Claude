@@ -1,0 +1,142 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/eligibility/stats": {
+      "get": {
+        "tags": [
+          "eligibility-controller"
+        ],
+        "operationId": "stats",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/eligibility/check": {
+      "get": {
+        "tags": [
+          "eligibility-controller"
+        ],
+        "operationId": "check",
+        "parameters": [
+          {
+            "name": "nationalId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "personId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "purpose",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "ENTRY",
+              "enum": [
+                "ENTRY",
+                "EXIT",
+                "WORK"
+              ]
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CheckResponse": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nationalId": {
+            "type": "string"
+          },
+          "fullName": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "policyVersion": {
+            "type": "string"
+          },
+          "permitId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "cacheHit": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

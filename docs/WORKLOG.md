@@ -31,3 +31,38 @@
 4. **ב-Keycloak 24 ומעלה, משתמש בלי email, firstName או lastName מקבל "Update profile" בכניסה הראשונה.** לכן לכל משתמש דמו ב-realm יש את כל השדות.
 
 **commit:** `feat(infra): phase 0 skeleton 1.1.3`
+
+## 20/11/2026 15:40 · שלב 1: שירותי backend (registry, permit, eligibility, enforcement, audit, gateway)
+**מה נעשה:** `java-common` (outbox, inbox, idempotency, Problem Details, אבטחה, מיסוך PII, correlation-id, DLT) ו-6 שירותים: gateway, registry, permit, eligibility, enforcement ו-audit. בנוסף שירות `migrate` (Liquibase) ו-seed דטרמיניסטי: 5,000 אנשים, 200 מעסיקים, 8,000 היתרים ו-50,000 מעברים.
+
+**למה:** כל זרימת הליבה עובדת מקצה לקצה כבר עכשיו: seed, Kafka, read-models, בדיקת זכאות ירוק/אדום.
+
+**פקודות ותוצאות:**
+- `mvn -T 2 test` (בקונטיינר עם 2GB): כל המודולים ירוקים.
+- `docker compose up --wait`: 15 קונטיינרים healthy, בסך הכל **~2.9GB RAM**.
+- בדיקת זכאות לחמשת אנשי הדמו:
+
+| ת"ז | תוצאה | סיבה |
+|---|---|---|
+| 900000001 | ALLOW | VALID_PERMIT |
+| 900000003 | DENY | ACTIVE_SANCTION:ENTRY_BAN |
+| 900000004 | REFER_TO_CLERK | SECURITY_PENDING |
+| 900000005 | DENY | NO_VALID_PERMIT |
+
+- קריאה שנייה מחזירה `cacheHit=true`.
+- נבדקו גם: PDF SPECIMEN (31KB), QR חתום, תור פקיד (keyset), ו-RBAC (worker מקבל 403 על בדיקת זכאות).
+
+**מושגים:**
+- **Transactional Outbox:** האירוע נכתב לטבלה **באותה טרנזקציה** של השינוי העסקי, ו-relay שולח אותו ל-Kafka. אם השירות נופל באמצע, האירוע לא אובד ולא נשלח בלי שהנתון נשמר.
+- **Inbox (idempotent consumer):** Kafka מבטיח "לפחות פעם אחת". `insert ... on conflict do nothing` על `(message_id, consumer)` מבטיח שהטיפול קורה רק פעם אחת.
+- **CQRS-lite:** eligibility לא שואל אף שירות בזמן הבדיקה. יש לו read-model משלו (Postgres, ומעליו Redis) שנבנה מאירועים. כתיבה וקריאה מופרדות, וזה מה שמאפשר p95 נמוך.
+- **Single-flight:** כשמפתח פג תוקף ו-100 בקשות מגיעות יחד, רק אחת בונה אותו מחדש (lock ב-Redis עם TTL של 2 שניות). כל השאר מחכות לה, וכך אין "עדר" שמפיל את ה-DB (cache stampede).
+- **Virtual threads (Java 21):** threads קלים ש-JVM מנהל בעצמו. אלפי בקשות שממתינות ל-IO לא תופסות threads של מערכת ההפעלה.
+- **Keyset pagination:** `WHERE (submitted_at, id) > (:last) ORDER BY ... LIMIT n` במקום `OFFSET`. הזמן קבוע גם בעמוד ה-1,000, ואין כפילויות כשנוספות שורות.
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **resilience4j-spring-boot3 עם version מפורש התנגש ב-BOM של Spring Cloud** (`NoClassDefFoundError: RxJava3FallbackDecorator`). הפתרון: להשאיר את הגרסה ל-BOM. נתקלנו בזה ותיקנו.
+2. **מיסוך PII מחק ננו-שניות בחותמות זמן** (9 ספרות אחרי נקודה). ה-regex עודכן, ונוספה בדיקה.
+3. **PgBouncer במצב transaction מול JDBC:** `prepared statement "S_1" already exists`. הפתרון: `prepareThreshold=0` ב-URL של כל שירות.
+4. **ArchUnit JUnit5 engine דיווח 0 בדיקות תחת surefire.** הבדיקות הוסבו ל-`@Test` רגילים עם `rule.check()`, כך שבטוח שהן רצות.
+5. **מחיקת cache לפני commit** הייתה עלולה להחזיר ל-Redis מצב ישן. לכן ה-evict מתבצע ב-`afterCommit`.

@@ -1,0 +1,47 @@
+# registry-service schema. Never edit an applied changeset – add a new one.
+databaseChangeLog:
+  - include: { file: db/changelog/common.yaml }
+  - changeSet:
+      id: registry-001-employer
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table employer (
+                id uuid primary key,
+                name varchar(200) not null,
+                business_number varchar(20) not null unique,
+                sector varchar(30) not null,
+                region varchar(30) not null,
+                username varchar(100) unique,
+                version bigint not null default 0
+              );
+      rollback:
+        - sql: { sql: drop table employer; }
+  - changeSet:
+      id: registry-002-person
+      author: ipp
+      changes:
+        - sql:
+            sql: >
+              create table person (
+                id uuid primary key,
+                national_id char(9) not null unique,
+                first_name varchar(100) not null,
+                last_name varchar(100) not null,
+                birth_date date not null,
+                magnetic_card varchar(20) not null,
+                magnetic_card_valid_to date not null,
+                security_status varchar(20) not null,
+                region varchar(30) not null,
+                employer_id uuid references employer(id),
+                username varchar(100) unique,
+                phone varchar(20),
+                created_at timestamptz not null default now(),
+                version bigint not null default 0
+              );
+              -- hot query: employer portal "approved workers in region" with keyset pagination
+              create index ix_person_employer_region_id on person (employer_id, region, id);
+              create index ix_person_region_id on person (region, id);
+      rollback:
+        - sql: { sql: drop table person; }

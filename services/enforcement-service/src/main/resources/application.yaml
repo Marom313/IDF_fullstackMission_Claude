@@ -1,0 +1,69 @@
+server:
+  port: 8080
+  shutdown: graceful
+spring:
+  application:
+    name: enforcement-service
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:pgbouncer}:${DB_PORT:6432}/ipp?prepareThreshold=0&ApplicationName=enforcement-service
+    username: enforcement_svc
+    password: ${DB_PASSWORD}
+    hikari:
+      # [MANUAL CHANGE – Marom] maximum-pool-size
+      # ברירת מחדל: 10 → ערך חדש: 10 (מתועד) – חישוב ב-ADR 0004
+      maximum-pool-size: 10
+      # [MANUAL CHANGE – Marom] connection-timeout
+      # ברירת מחדל: 30000ms → ערך חדש: 3000ms
+      # למה: כשל מהיר במקום תור ארוך של בקשות שמחכות לחיבור
+      connection-timeout: 3000
+      # [MANUAL CHANGE – Marom] leak-detection-threshold
+      # ברירת מחדל: 0 (כבוי) → ערך חדש: 20000ms
+      # למה: לוג אזהרה על חיבור שלא הוחזר ל-pool
+      leak-detection-threshold: 20000
+  liquibase:
+    enabled: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        linger.ms: 5
+    consumer:
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+ipp:
+  security:
+    jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
+    issuer: ${JWT_ISSUER:http://localhost/auth/realms/ipp}
+  seed:
+    enabled: ${SEED_ENABLED:true}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,circuitbreakers
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    circuitbreakers:
+      enabled: true
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+---
+ipp:
+  enforcement:
+    auto-sanction: ${AUTO_SANCTION:true}
+    overstay-scan-ms: 30000

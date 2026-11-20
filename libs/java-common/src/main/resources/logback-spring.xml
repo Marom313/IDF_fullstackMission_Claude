@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- JSON logs with traceId + PII masking (Israeli ID = 9 digits, phone numbers). Shared by all services. -->
+<configuration>
+  <springProperty scope="context" name="service" source="spring.application.name"/>
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <customFields>{"service":"${service}"}</customFields>
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+      <jsonGeneratorDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+        <defaultMask>***</defaultMask>
+        <!-- 9-digit national id → keep last 2 digits -->
+        <valueMasker class="il.ipp.common.logging.PiiValueMasker"/>
+        <path>nationalId</path>
+        <path>phone</path>
+      </jsonGeneratorDecorator>
+    </encoder>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="JSON"/>
+  </root>
+  <logger name="org.apache.kafka" level="WARN"/>
+  <logger name="org.springframework.kafka" level="WARN"/>
+</configuration>
