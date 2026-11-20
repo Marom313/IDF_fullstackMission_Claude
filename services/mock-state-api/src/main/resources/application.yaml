@@ -1,0 +1,31 @@
+server:
+  port: 8090
+  shutdown: graceful
+
+spring:
+  application:
+    name: mock-state-api
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+ipp:
+  mock:
+    seed: ${IPP_MOCK_SEED:42}                     # same seed in every environment = same synthetic people
+    population-size: ${IPP_MOCK_POPULATION:5000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
