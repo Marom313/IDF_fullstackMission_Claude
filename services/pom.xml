@@ -27,6 +27,7 @@
     <module>audit-service</module>
     <module>policy-service</module>
     <module>mock-state-api</module>
+    <module>ingest-service</module>
   </modules>
 
   <properties>

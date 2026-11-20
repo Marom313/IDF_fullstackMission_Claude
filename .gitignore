@@ -2,7 +2,7 @@
 .env
 *.pem
 *.key
-!infra/nifi/keys/*.pub.pem
+!infra/ingest/keys/*.pub.pem
 # build
 target/
 dist/
@@ -18,3 +18,4 @@ ingest/quarantine/*
 ingest/archive/*
 !ingest/**/.gitkeep
 .offline-bundle/
+.ingest-keys/

@@ -17,7 +17,7 @@ function Invoke-Bash([string]$script) {
 }
 
 switch ($Cmd) {
-  "up"     { docker compose --profile core up -d --build --wait --wait-timeout 600 }
+  "up"     { docker compose --profile core --profile ingest up -d --build --wait --wait-timeout 600 }
   "down"   { docker compose --profile core --profile ingest --profile observability down }
   "reset"  { docker compose --profile core --profile ingest --profile observability down -v --remove-orphans }
   "logs"   { if ($Arg) { docker compose logs -f --tail 200 $Arg } else { docker compose logs -f --tail 100 } }
@@ -25,5 +25,8 @@ switch ($Cmd) {
   "seed"   { Invoke-Bash "scripts/seed/seed.sh" }
   "verify" { Invoke-Bash "scripts/verify.sh" }
   "demo"   { docker compose --profile core --profile ingest up -d --build --wait --wait-timeout 900; Invoke-Bash "scripts/seed/seed.sh"; Start-Process "http://localhost" }
-  default  { Write-Host "ipp commands: up | down | seed | verify | demo | logs [svc] | ps | reset" }
+  "perf"   { $env:MSYS_NO_PATHCONV = "1"; docker run --rm --network ipp_ipp --cpus 2 --memory 512m -v "${PWD}/scripts/perf:/perf" grafana/k6:0.57.0 run /perf/eligibility.js }
+  "batch"  { node scripts/ingest/make-batch.mjs $Arg.Split(" ") }
+  "chaos"  { $on = if ($Arg -eq "off") { "false" } else { "true" }; Invoke-Bash "scripts/chaos.sh $on" }
+  default  { Write-Host "ipp commands: up | down | seed | verify | demo | logs [svc] | ps | reset | perf | batch [--tamper|--badsig] | chaos [on|off]" }
 }

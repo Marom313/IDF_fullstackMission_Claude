@@ -331,6 +331,22 @@ services:
     ports: ["127.0.0.1:8090:8080"]
     mem_limit: 384m
 
+  # ───────────────────────── ingest profile ─────────────────────────
+  # Whitelisting pipeline (stands in for the NiFi flow – ADR 0007). Start: docker compose --profile ingest up -d
+  ingest-service:
+    <<: *spring-service
+    profiles: [ingest]
+    build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: ingest-service } }
+    image: ipp/ingest-service:0.1.0
+    environment:
+      <<: *spring-env
+    volumes:
+      - ./ingest:/ingest
+      - ./infra/ingest/keys:/keys:ro
+    mem_limit: 384m
+    depends_on:
+      kafka: { condition: service_healthy }
+
   gateway:
     <<: *spring-service
     build: { context: ., dockerfile: services/Dockerfile, args: { SERVICE: gateway } }

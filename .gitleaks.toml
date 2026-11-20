@@ -6,8 +6,10 @@ description = "documented throwaway dev defaults and public demo keys"
 paths = [
   '''\.env\.example$''',
   '''infra/keycloak/ipp-realm\.json$''',
-  '''infra/nifi/keys/.*\.pub\.pem$''',
+  '''infra/ingest/keys/.*\.pub\.pem$''',
   '''(^|/)node_modules/''',
   '''(^|/)target/''',
   '''(^|/)\.git/''',
+  # demo ingest private key: gitignored, never committed (the pre-commit hook scans staged files only)
+  '''(^|/)\.ingest-keys/''',
 ]

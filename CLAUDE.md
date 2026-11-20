@@ -14,10 +14,11 @@ ENFORCEMENT_OFFICER, AUDITOR, SYS_ADMIN. Demo users: `<role>1` (worker1, officer
 apps/web                 React + TS + Vite, MVVM (model / viewmodel / view per feature)
 services/<name>          Spring Boot 3, Java 21, Hexagonal (domain/application/adapters)
   gateway, registry-service, permit-service, eligibility-service, enforcement-service, audit-service
-  policy-service, mock-state-api   ← built by the cloud agent on branch cloud/policy-and-mock
+  policy-service, mock-state-api   ← built by the cloud agent (merged)
+  ingest-service   ← whitelisting pipeline, profile `ingest` (stands in for NiFi, ADR 0007)
 libs/java-common         outbox, inbox, problem-details, PII masking, tracing
 contracts/{openapi,events}
-infra/{postgres,pgbouncer,keycloak,nifi,nginx,seaweedfs,grafana}
+infra/{postgres,pgbouncer,keycloak,mongo,migrate,ingest/keys,nginx,seaweedfs}
 ingest/{inbox,quarantine,archive}   runtime, gitignored
 scripts/{verify.sh,offline,seed,perf,ingest}
 docs/{SPEC,WORKLOG,GAPS,CLOSED_NETWORK,DEMO_SCRIPT}.md  docs/adr/  docs/perf/  docs/setup/
@@ -26,7 +27,7 @@ presentation_pics/ test.py   ← pre-existing, never touch
 
 ## Commands (`./ipp.ps1 <cmd>` on Windows, `make <cmd>` in WSL/Git Bash)
 `up` (core profile, waits healthy) · `down` · `reset` (drops volumes) · `logs [svc]` · `ps` ·
-`seed` · `verify` · `demo`. URLs: app http://localhost · Keycloak http://localhost/auth (admin also
+`seed` · `verify` · `demo` · `perf` (k6) · `batch [--tamper|--badsig]` (signed ingest batch) · `chaos on|off`. URLs: app http://localhost · Keycloak http://localhost/auth (admin also
 on :8180) · kafka-ui http://localhost:8085.
 
 ## Machine safety (Windows 10, 32GB, Docker Desktop/WSL2)

@@ -124,3 +124,25 @@
 2. **EventSource לא תומך ב-headers.** SSE ממומש ב-fetch streaming עם reconnect.
 3. **vitest 2 מביא vite 5 משלו** (התנגשות טיפוסים עם vite 6). שודרג ל-vitest 3.
 4. **TanStack Virtual משתמש ב-style attributes**, ו-CSP עם `style-src 'self'` חוסם אותם. נוסף רק `style-src-attr 'unsafe-inline'`, בלי `<style>` inline ובלי סקריפטים inline.
+
+## 20/11/2026 17:00 · שלבים 3–4: קליטה, k6, דמו
+**מה נעשה:**
+- `ingest-service`, צנרת הלבנה ב-9 שלבים (ADR 0007, הוחלט במקום NiFi).
+- `scripts/ingest/make-batch.mjs` ליצירת חבילות חתומות, כולל `--tamper` ו-`--badsig`.
+- k6.
+- `DEMO_SCRIPT.md`.
+- סקריפטי offline (`bundle.sh`, `load.sh`).
+- פקודות `perf`, `batch` ו-`chaos`.
+
+**תוצאות:**
+- **k6, 200 RPS למשך 60 שניות:** p95=**20.3ms**, p99=92ms, 0% שגיאות, 12,000 בקשות, cache hit **95.8%**. נשמר ב-`docs/perf/`.
+- **סגירת מעגל:** batch חתום עם כניסה של 900000005 (בלי היתר) עובר ingest, Kafka, ואז enforcement (STAY_WITHOUT_PERMIT), מניעת כניסה אוטומטית, ו-eligibility DENY. הכול תוך שניות.
+- **חתימה פסולה:** הקובץ עובר ל-`ingest/quarantine` עם `.reason`, ומוצג במסך הניהול.
+- **`--scale eligibility-service=3`:** כל המופעים healthy, אבל ה-gateway לא מפזר עומס (G-32).
+
+**מושג:** **Ed25519 על manifest במקום על הקובץ.** חותמים על מסמך קטן שמכיל את ה-SHA-256 של הקובץ. מאמתים את החתימה, ואז משווים hash. כך לא צריך לחתום על קבצים גדולים, ואותו manifest משמש ל-dedup ול-audit.
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **"קובץ חצי כתוב":** הצנרת מתחילה רק כשכל שלושת הקבצים קיימים, והחתימה נכתבת אחרונה.
+2. **שליחה כפולה:** ל-`crossingId` יש מזהה דטרמיניסטי (hash של הקובץ ומספר השורה), וה-consumer הוא idempotent (inbox).
+3. **מדידת k6 על JVM קר** (C1 בלבד, `TieredStopAtLevel=1`) הראתה p95 של כשנייה. אחרי חימום: 20ms. לכן בתסריט הדמו מחממים לפני.

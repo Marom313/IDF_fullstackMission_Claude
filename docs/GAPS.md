@@ -43,6 +43,9 @@
 | G-28 | פרונט | CSP מתיר `style-src-attr 'unsafe-inline'` | TanStack Virtual ו-flex layout דורשים style attribute דינמי | רק attributes, בלי `<style>` ובלי סקריפט inline. `script-src 'self'` נשאר קשיח | CSS custom properties דרך CSSOM (`element.style.setProperty`) או nonce-based CSP | 🟢 | S |
 | G-29 | פרונט | Playwright E2E ובדיקת ניגודיות בדפדפן אמיתי לא הורצו | זמן (Stretch) | axe ב-Vitest על מסכי המפתח, ו-ViewModel tests | Playwright לזרימה של כל תפקיד, ו-axe בדפדפן | 🟠 | S |
 | G-30 | פרונט | סריקת QR במצלמה לא מומשה (הדבקת תוכן בלבד) | זמן, והרשאות מצלמה ב-kiosk | אימות חתימה offline ב-WebCrypto Ed25519, ואחריו אימות מול השרת | BarcodeDetector או סורק חומרה (HID) במסוף | 🟢 | S |
+| G-31 | רשת סגורה | צנרת הקליטה ממומשת כ-`ingest-service` (Java) ולא כ-flow ב-NiFi | זמן (יום אחד), 1.5GB RAM, ואין processor מובנה ל-Ed25519 ב-NiFi | אותם 9 שלבים ואותו סדר (ADR 0007): חתימה, SHA-256, dedup, סכמה, quarantine עם סיבה, ו-audit | flow ב-NiFi (מיפוי processors ב-ADR 0007) מאחורי diode ו-CDR, או השארת השירות כשכבת אימות שנייה | 🟠 | M |
+| G-32 | סקייל | `--scale eligibility-service=3` עולה healthy, אבל ה-gateway מחזיק חיבורי keep-alive וכל התעבורה מגיעה למופע אחד | Reactor Netty מחזיק pool ו-resolver משלו, ואין service registry בסביבת compose | נמדד: p95=20ms ב-200 RPS על מופע יחיד, כלומר הצוואר אינו ה-eligibility | Kubernetes Service (kube-proxy), או Spring Cloud LoadBalancer עם discovery | 🟢 | S |
+| G-33 | אבטחה | ערוץ ה-chaos (`/api/chaos`) פתוח לכל משתמש מאומת | נועד להדגמה בלייב | רק דרך ה-gateway (JWT). ה-mock עצמו לא חשוף מחוץ ל-localhost | הסרה בפרודקשן (mock-state לא קיים שם) | 🟢 | S |
 | G-17 | תהליך | המערכת נבנתה בפחות מ-48 שעות | לוח הזמנים של הראיון | קו MVP מוגדר, `verify` ירוק בכל שלב, ותיעוד מלא (SPEC, ADR, WORKLOG) | סקירת קוד של צוות, ו-hardening לפי ממצאי מסמך זה | 🟢 | M |
 
 ## סיכום למראיין

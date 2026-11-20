@@ -1,0 +1,33 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: ingest-service
+  threads:
+    virtual:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+ipp:
+  security:
+    jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
+    issuer: ${JWT_ISSUER:http://localhost/auth/realms/ipp}
+  outbox:
+    enabled: false
+  ingest:
+    dir: /ingest
+    public-key: /keys/ingest.pub.pem
+    poll-ms: 3000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
