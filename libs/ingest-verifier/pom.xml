@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>il.ipp</groupId>
+    <artifactId>ipp-parent</artifactId>
+    <version>0.1.0</version>
+    <relativePath>../../services/pom.xml</relativePath>
+  </parent>
+  <artifactId>ingest-verifier</artifactId>
+  <name>IPP :: ingest-verifier</name>
+  <description>
+    Verifies a signed crossing batch (zip: data.csv + manifest.json + manifest.sig) before it enters the
+    network: size and zip-bomb limits, Ed25519 signature, SHA-256, schema, duplicates. Run by NiFi
+    (ExecuteStreamCommand). JDK only, zero runtime dependencies: nothing extra to mirror into the closed network.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>ingest-verifier</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>il.ipp.ingest.verifier.IngestVerifier</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -55,6 +55,30 @@
 
 ---
 
+## 2026-11-20 16:50–18:30 · NiFi ingest (הלבנה) · branch `cloud/nifi-ingest`
+**מה נעשה:**
+- `libs/ingest-verifier`: בודק אצוות מעבר. JDK בלבד, אפס תלויות. בודק גודל, zip bomb, zip slip, חתימת Ed25519 על ה-manifest, SHA-256, כפילויות, סכמה ושורות.
+- `scripts/ingest/make-nifi-batch.mjs`: יוצר אצווה חתומה (ZIP), ב-7 תרחישים. משתמש באותו זוג מפתחות כמו `make-batch.mjs` של ingest-service.
+- `scripts/ingest/build-nifi-flow.mjs`: מייצר את `infra/nifi/flow/ipp-ingest.flow.json` (13 processors).
+- `infra/nifi/Dockerfile`: NiFi 2.9.0 עם ה-jar.
+- שירות `nifi` ב-compose, בפרופיל משלו `nifi` (1.5GB), כדי ש-`make up` (core+ingest) יישאר קל.
+- `scripts/ingest/ingest-direct.sh`: fallback בלי NiFi.
+- `docs/NIFI.md`.
+
+**מושגים חדשים (הסבר):**
+- **חתימה אסימטרית (Ed25519):** השולח חותם עם מפתח פרטי, ו-NiFi בודק עם המפתח הציבורי. hash (SHA-256) מוכיח שהקובץ לא השתנה. החתימה מוכיחה גם *מי* שלח, כי בלי המפתח הפרטי אי אפשר לייצר חתימה תקפה.
+- **Quarantine (הסגר):** קובץ שנכשל לא נמחק ולא נקלט. הוא נשמר בצד עם סיבה, לבדיקה של קצין אבטחה.
+- **Receipts:** רשימת ה-SHA-256 של הקבצים שכבר נקלטו. אותו קובץ שנשלח פעמיים (replay) נדחה.
+
+**בדיקות:**
+- 13 טסטים עברו (javac + JUnit stub).
+- 7 תרחישים עברו מקצה לקצה: Node → verifier.
+- **לא הורץ:** NiFi עצמו (Docker Hub חסום בענן, ראו GAPS G-31).
+
+**⚠️ באגים ידועים שנמנעו:** ראו `docs/NIFI.md`: קובץ שנקרא בזמן כתיבה, zip bomb עם גודל מוצהר שקרי, zip slip, timing בהשוואת hash, BOM של Excel, `execution.status` כמחרוזת, וטרנזקציות של Kafka מול broker יחיד.
+
+**תיקון באגים של עצמי:** בטסט הראשון הייתה שורה עם זמן בעתיד ביחס לשעון הקבוע של הטסט. ה-verifier דחה אותה, ובצדק (`FUTURE_TIMESTAMP`). תוקן ה-fixture, לא הקוד.
+
 ## פערים להוספה ל-`docs/GAPS.md` (במיזוג)
 | # | תחום | הפער | למה | מה עשינו במקום | מה נדרש לפרודקשן | חומרה | מאמץ |
 |---|---|---|---|---|---|---|---|

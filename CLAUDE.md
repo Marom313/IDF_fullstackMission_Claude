@@ -15,10 +15,11 @@ apps/web                 React + TS + Vite, MVVM (model / viewmodel / view per f
 services/<name>          Spring Boot 3, Java 21, Hexagonal (domain/application/adapters)
   gateway, registry-service, permit-service, eligibility-service, enforcement-service, audit-service
   policy-service, mock-state-api   ← built by the cloud agent (merged)
-  ingest-service   ← whitelisting pipeline, profile `ingest` (stands in for NiFi, ADR 0007)
+  ingest-service   ← whitelisting pipeline, profile `ingest` (ADR 0007)
+libs/ingest-verifier     JDK-only batch verifier run by NiFi (ADR 0008, docs/NIFI.md)
 libs/java-common         outbox, inbox, problem-details, PII masking, tracing
 contracts/{openapi,events}
-infra/{postgres,pgbouncer,keycloak,mongo,migrate,ingest/keys,nginx,seaweedfs}
+infra/{postgres,pgbouncer,keycloak,mongo,migrate,ingest/keys,nifi,nginx,seaweedfs}
 ingest/{inbox,quarantine,archive}   runtime, gitignored
 scripts/{verify.sh,offline,seed,perf,ingest}
 docs/{SPEC,WORKLOG,GAPS,CLOSED_NETWORK,DEMO_SCRIPT}.md  docs/adr/  docs/perf/  docs/setup/
@@ -33,7 +34,7 @@ on :8180) · kafka-ui http://localhost:8085 · Grafana http://localhost:3000 · 
 
 ## Machine safety (Windows 10, 32GB, Docker Desktop/WSL2)
 - Every compose service has `mem_limit` + `cpus`. Spring: 512m, SerialGC, MaxRAMPercentage=70.
-- core profile ≤ 8GB total. NiFi only in `ingest` profile. `COMPOSE_PARALLEL_LIMIT=2`.
+- core profile ≤ 8GB total. NiFi only in its own `nifi` profile (~1.5GB, opt-in). `COMPOSE_PARALLEL_LIMIT=2`.
 - Maven builds run in a container capped at 1.5GB / 2 CPUs. Never run unbounded parallel builds.
 
 ## Code rules

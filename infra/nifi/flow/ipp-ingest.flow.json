@@ -1,0 +1,1017 @@
+{
+  "flowContents": {
+    "identifier": "5105551c-65da-0c39-6059-30900918c705",
+    "instanceIdentifier": "ea65e79e-b54b-6a4c-fad9-72eebb078882",
+    "name": "IPP ingest (whitening)",
+    "comments": "Crossing batches from outside: verify Ed25519 manifest signature + SHA-256 + schema, publish to Kafka, archive or quarantine. ALL DATA IS MOCK. See docs/NIFI.md.",
+    "position": {
+      "x": 0,
+      "y": 0
+    },
+    "processGroups": [],
+    "remoteProcessGroups": [],
+    "processors": [
+      {
+        "identifier": "6bf46111-9535-4828-728f-0d7fd48d3f85",
+        "instanceIdentifier": "ec557552-79f8-2c11-2fdb-bb6ff83c8ac7",
+        "name": "List inbox",
+        "comments": "Primary node only: one listing, no double ingest in a cluster.",
+        "position": {
+          "x": 0,
+          "y": 0
+        },
+        "type": "org.apache.nifi.processors.standard.ListFile",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Input Directory": "/ingest/inbox",
+          "File Filter": "[^\\.].*\\.zip",
+          "Recurse Subdirectories": "false",
+          "Minimum File Age": "5 sec"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "10 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "PRIMARY",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "4486d73d-f7c3-229b-09a5-f08a87b75c89",
+        "instanceIdentifier": "c0f3d852-b9a4-1c24-c215-3db74ce6fd7e",
+        "name": "Fetch batch",
+        "comments": "",
+        "position": {
+          "x": 0,
+          "y": 200
+        },
+        "type": "org.apache.nifi.processors.standard.FetchFile",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "File to Fetch": "${absolute.path}/${filename}",
+          "Completion Strategy": "Delete File"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "not.found",
+          "permission.denied",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "f08cf5f6-27cc-ac8e-f8db-1d43a961d135",
+        "instanceIdentifier": "5f949b55-e8be-f58d-e22e-9f7211bba39f",
+        "name": "Verify (signature, SHA-256, schema)",
+        "comments": "Exit 0 accepted · 3 quarantined · 2 config error. stdout = NDJSON for Kafka, stderr = reason.",
+        "position": {
+          "x": 0,
+          "y": 400
+        },
+        "type": "org.apache.nifi.processors.standard.ExecuteStreamCommand",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Command Path": "java",
+          "Command Arguments": "-jar;/opt/ipp/ingest-verifier.jar;--key;/opt/ipp/keys/ingest.pub.pem;--receipts;/ingest/.receipts;--name;${filename}",
+          "Argument Delimiter": ";",
+          "Ignore STDIN": "false",
+          "Working Directory": "/tmp"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "65444ae9-bca3-4ef8-92de-4b73176928d4",
+        "instanceIdentifier": "ff5c4350-0f78-4b17-cc10-39d868938d63",
+        "name": "One message per line",
+        "comments": "",
+        "position": {
+          "x": -450,
+          "y": 600
+        },
+        "type": "org.apache.nifi.processors.standard.SplitText",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Line Split Count": "1",
+          "Header Line Count": "0",
+          "Remove Trailing Newlines": "true"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "original",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "bedef9c4-0934-4a54-db23-0d641995277a",
+        "instanceIdentifier": "026a45d2-f344-0fec-218b-9405173f4c31",
+        "name": "Read topic and key",
+        "comments": "",
+        "position": {
+          "x": -450,
+          "y": 800
+        },
+        "type": "org.apache.nifi.processors.standard.EvaluateJsonPath",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Destination": "flowfile-attribute",
+          "Return Type": "scalar",
+          "ipp.topic": "$._topic",
+          "ipp.key": "$._key"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "unmatched",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "22a4f74c-480c-f355-8e81-097ae2f8e5b2",
+        "instanceIdentifier": "faea4560-a261-679d-7e33-d2a73f993ffc",
+        "name": "Strip routing fields",
+        "comments": "",
+        "position": {
+          "x": -450,
+          "y": 1000
+        },
+        "type": "org.apache.nifi.processors.standard.ReplaceText",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Replacement Strategy": "Regex Replace",
+          "Evaluation Mode": "Entire text",
+          "Regular Expression": "^\\{\"_topic\":\"[^\"]*\",\"_key\":\"[^\"]*\",",
+          "Replacement Value": "{"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "3400c3e8-0e32-57a4-7eb7-29bc48e5e386",
+        "instanceIdentifier": "2acd01a9-7ce8-5e22-4b11-78bd27d58a52",
+        "name": "Publish to Kafka",
+        "comments": "",
+        "position": {
+          "x": -450,
+          "y": 1200
+        },
+        "type": "org.apache.nifi.kafka.processors.PublishKafka",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-kafka-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Kafka Connection Service": "4e2fa620-885d-cae9-4996-a4770ab8719d",
+          "Topic Name": "${ipp.topic}",
+          "Kafka Key": "${ipp.key}",
+          "Transactions Enabled": "false",
+          "Failure Strategy": "Rollback"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "success"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "1ca3f3ab-2bfc-8ac0-afbd-0565ed047de3",
+        "instanceIdentifier": "acd8d6a9-deca-9122-070f-eb4a2d663abb",
+        "name": "Accepted?",
+        "comments": "",
+        "position": {
+          "x": 450,
+          "y": 600
+        },
+        "type": "org.apache.nifi.processors.standard.RouteOnAttribute",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Routing Strategy": "Route to Property name",
+          "accepted": "${execution.status:equals('0')}"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "155688a5-8ab9-e1c3-8aef-29a3bd376fb4",
+        "instanceIdentifier": "ab629fd6-e244-9fad-10f0-35bea9989044",
+        "name": "Archive",
+        "comments": "",
+        "position": {
+          "x": 300,
+          "y": 800
+        },
+        "type": "org.apache.nifi.processors.standard.PutFile",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Directory": "/ingest/archive",
+          "Conflict Resolution Strategy": "replace",
+          "Create Missing Directories": "true"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "success",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "b8ad4020-5aef-6ccc-8051-cc6c4ac958b7",
+        "instanceIdentifier": "13fd5a91-f6a9-61eb-22a8-03f3834d34b7",
+        "name": "Quarantine",
+        "comments": "",
+        "position": {
+          "x": 650,
+          "y": 800
+        },
+        "type": "org.apache.nifi.processors.standard.PutFile",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Directory": "/ingest/quarantine",
+          "Conflict Resolution Strategy": "replace",
+          "Create Missing Directories": "true"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "success",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "2b5a8b67-6f4d-41e3-9552-587a5c45d1de",
+        "instanceIdentifier": "035e09fc-85f2-69e6-e15c-f18aff039d3a",
+        "name": "Reason text",
+        "comments": "",
+        "position": {
+          "x": 1000,
+          "y": 800
+        },
+        "type": "org.apache.nifi.processors.standard.ReplaceText",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Replacement Strategy": "Always Replace",
+          "Evaluation Mode": "Entire text",
+          "Replacement Value": "${execution.error}\n"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "0a44341b-916d-fad1-6f56-c59d7e7d0e5e",
+        "instanceIdentifier": "df69796a-8602-e877-9b81-91e3fc9a0a7c",
+        "name": "Name .reason",
+        "comments": "",
+        "position": {
+          "x": 1000,
+          "y": 1000
+        },
+        "type": "org.apache.nifi.processors.attributes.UpdateAttribute",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-update-attribute-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "filename": "${filename}.reason"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "66e2401f-1c20-f89b-9055-4ea035612327",
+        "instanceIdentifier": "ead17d39-f67c-a1f1-bb48-b81cdbadb092",
+        "name": "Write reason",
+        "comments": "",
+        "position": {
+          "x": 1000,
+          "y": 1200
+        },
+        "type": "org.apache.nifi.processors.standard.PutFile",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-standard-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "Directory": "/ingest/quarantine",
+          "Conflict Resolution Strategy": "replace",
+          "Create Missing Directories": "true"
+        },
+        "propertyDescriptors": {},
+        "style": {},
+        "schedulingPeriod": "0 sec",
+        "schedulingStrategy": "TIMER_DRIVEN",
+        "executionNode": "ALL",
+        "penaltyDuration": "30 sec",
+        "yieldDuration": "1 sec",
+        "bulletinLevel": "WARN",
+        "runDurationMillis": 0,
+        "concurrentlySchedulableTaskCount": 1,
+        "autoTerminatedRelationships": [
+          "success",
+          "failure"
+        ],
+        "scheduledState": "ENABLED",
+        "retryCount": 10,
+        "retriedRelationships": [],
+        "backoffMechanism": "PENALIZE_FLOWFILE",
+        "maxBackoffPeriod": "10 mins",
+        "componentType": "PROCESSOR",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      }
+    ],
+    "inputPorts": [],
+    "outputPorts": [],
+    "connections": [
+      {
+        "identifier": "0e75fe0b-52c2-d782-30d6-6558d044d5f3",
+        "instanceIdentifier": "6145658f-38e9-bbd2-6a91-853beb27db07",
+        "name": "",
+        "source": {
+          "id": "6bf46111-9535-4828-728f-0d7fd48d3f85",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "List inbox"
+        },
+        "destination": {
+          "id": "4486d73d-f7c3-229b-09a5-f08a87b75c89",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Fetch batch"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "success"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "b2328ca4-74fd-a03d-ef6c-1d33aa2702c0",
+        "instanceIdentifier": "fe62154e-8706-5add-fa44-8bbadebbb8a2",
+        "name": "",
+        "source": {
+          "id": "4486d73d-f7c3-229b-09a5-f08a87b75c89",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Fetch batch"
+        },
+        "destination": {
+          "id": "f08cf5f6-27cc-ac8e-f8db-1d43a961d135",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Verify (signature, SHA-256, schema)"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "success"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "f1e4b97c-475c-401d-aac8-5495be40d487",
+        "instanceIdentifier": "357027ee-aee6-49dc-fbbf-0803a1ddffe4",
+        "name": "",
+        "source": {
+          "id": "f08cf5f6-27cc-ac8e-f8db-1d43a961d135",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Verify (signature, SHA-256, schema)"
+        },
+        "destination": {
+          "id": "65444ae9-bca3-4ef8-92de-4b73176928d4",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "One message per line"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "output stream",
+          "nonzero status"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "d2fe860e-c8d9-46c2-8147-f05af46439ea",
+        "instanceIdentifier": "08cf25fc-db01-a215-34dd-fbeb3eda95dc",
+        "name": "",
+        "source": {
+          "id": "f08cf5f6-27cc-ac8e-f8db-1d43a961d135",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Verify (signature, SHA-256, schema)"
+        },
+        "destination": {
+          "id": "1ca3f3ab-2bfc-8ac0-afbd-0565ed047de3",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Accepted?"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "original"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "57c4ecff-112f-5071-e4a3-daff781b668b",
+        "instanceIdentifier": "17bf32d8-d37f-c332-5f9e-3e1d8778a47e",
+        "name": "",
+        "source": {
+          "id": "65444ae9-bca3-4ef8-92de-4b73176928d4",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "One message per line"
+        },
+        "destination": {
+          "id": "bedef9c4-0934-4a54-db23-0d641995277a",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Read topic and key"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "splits"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "4bc50f8f-c1ff-57d2-f1cb-ff022c1f0c9f",
+        "instanceIdentifier": "34ddca5f-63ae-0bb0-f4e8-3612654f23ea",
+        "name": "",
+        "source": {
+          "id": "bedef9c4-0934-4a54-db23-0d641995277a",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Read topic and key"
+        },
+        "destination": {
+          "id": "22a4f74c-480c-f355-8e81-097ae2f8e5b2",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Strip routing fields"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "matched"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "cfcb9ec7-0969-5012-6e34-19b3ba7d9b1f",
+        "instanceIdentifier": "81268f4e-9430-9da8-9b4f-e823d5aa5f57",
+        "name": "",
+        "source": {
+          "id": "22a4f74c-480c-f355-8e81-097ae2f8e5b2",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Strip routing fields"
+        },
+        "destination": {
+          "id": "3400c3e8-0e32-57a4-7eb7-29bc48e5e386",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Publish to Kafka"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "success"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "c10cf1a3-7b81-f518-e606-1988a4357d5e",
+        "instanceIdentifier": "bd4c0fe5-1a60-a030-5968-5cd8f8ff2c69",
+        "name": "",
+        "source": {
+          "id": "3400c3e8-0e32-57a4-7eb7-29bc48e5e386",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Publish to Kafka"
+        },
+        "destination": {
+          "id": "3400c3e8-0e32-57a4-7eb7-29bc48e5e386",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Publish to Kafka"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "failure"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "36c1947f-a5aa-11aa-2705-4818f7162609",
+        "instanceIdentifier": "72b462b3-4377-72d9-7dc5-a110f5a09211",
+        "name": "",
+        "source": {
+          "id": "1ca3f3ab-2bfc-8ac0-afbd-0565ed047de3",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Accepted?"
+        },
+        "destination": {
+          "id": "155688a5-8ab9-e1c3-8aef-29a3bd376fb4",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Archive"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "accepted"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "439e8dbe-2a7d-5f1d-ea50-d552cd87ae7b",
+        "instanceIdentifier": "7b0fd009-8797-d045-9150-08e5a9893564",
+        "name": "",
+        "source": {
+          "id": "1ca3f3ab-2bfc-8ac0-afbd-0565ed047de3",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Accepted?"
+        },
+        "destination": {
+          "id": "b8ad4020-5aef-6ccc-8051-cc6c4ac958b7",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Quarantine"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "unmatched"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "4c18a5a4-d0f4-3c0b-bcb2-825a00c005e6",
+        "instanceIdentifier": "85c56ecb-e301-e4a4-b958-c230961dd2a9",
+        "name": "",
+        "source": {
+          "id": "1ca3f3ab-2bfc-8ac0-afbd-0565ed047de3",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Accepted?"
+        },
+        "destination": {
+          "id": "2b5a8b67-6f4d-41e3-9552-587a5c45d1de",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Reason text"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "unmatched"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "868edbfa-1b81-86d8-14c7-7923e8bd3948",
+        "instanceIdentifier": "e58e33ea-3d07-af2b-45c4-588d5a7f8f5c",
+        "name": "",
+        "source": {
+          "id": "2b5a8b67-6f4d-41e3-9552-587a5c45d1de",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Reason text"
+        },
+        "destination": {
+          "id": "0a44341b-916d-fad1-6f56-c59d7e7d0e5e",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Name .reason"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "success"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      },
+      {
+        "identifier": "90b7d184-7676-bf7e-47af-0f00dab57d09",
+        "instanceIdentifier": "076cdf81-103b-ea92-548e-5d4b602ae464",
+        "name": "",
+        "source": {
+          "id": "0a44341b-916d-fad1-6f56-c59d7e7d0e5e",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Name .reason"
+        },
+        "destination": {
+          "id": "66e2401f-1c20-f89b-9055-4ea035612327",
+          "type": "PROCESSOR",
+          "groupId": "5105551c-65da-0c39-6059-30900918c705",
+          "name": "Write reason"
+        },
+        "labelIndex": 1,
+        "zIndex": 0,
+        "selectedRelationships": [
+          "success"
+        ],
+        "backPressureObjectThreshold": 10000,
+        "backPressureDataSizeThreshold": "1 GB",
+        "flowFileExpiration": "0 sec",
+        "prioritizers": [],
+        "bends": [],
+        "loadBalanceStrategy": "DO_NOT_LOAD_BALANCE",
+        "partitioningAttribute": "",
+        "loadBalanceCompression": "DO_NOT_COMPRESS",
+        "componentType": "CONNECTION",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      }
+    ],
+    "labels": [],
+    "funnels": [],
+    "controllerServices": [
+      {
+        "identifier": "4e2fa620-885d-cae9-4996-a4770ab8719d",
+        "instanceIdentifier": "a303b1a7-d82a-e66d-af72-8675c4976bb5",
+        "name": "Kafka (kafka:9092)",
+        "comments": "PLAINTEXT inside the Docker network, like the Spring services. Production: SASL_SSL.",
+        "type": "org.apache.nifi.kafka.service.Kafka3ConnectionService",
+        "bundle": {
+          "group": "org.apache.nifi",
+          "artifact": "nifi-kafka-3-service-nar",
+          "version": "2.9.0"
+        },
+        "properties": {
+          "bootstrap.servers": "kafka:9092"
+        },
+        "propertyDescriptors": {},
+        "controllerServiceApis": [
+          {
+            "type": "org.apache.nifi.kafka.service.api.KafkaConnectionService",
+            "bundle": {
+              "group": "org.apache.nifi",
+              "artifact": "nifi-kafka-service-api-nar",
+              "version": "2.9.0"
+            }
+          }
+        ],
+        "scheduledState": "ENABLED",
+        "bulletinLevel": "WARN",
+        "componentType": "CONTROLLER_SERVICE",
+        "groupIdentifier": "5105551c-65da-0c39-6059-30900918c705"
+      }
+    ],
+    "defaultFlowFileExpiration": "0 sec",
+    "defaultBackPressureObjectThreshold": 10000,
+    "defaultBackPressureDataSizeThreshold": "1 GB",
+    "flowFileConcurrency": "UNBOUNDED",
+    "flowFileOutboundPolicy": "STREAM_WHEN_AVAILABLE",
+    "componentType": "PROCESS_GROUP"
+  },
+  "externalControllerServices": {},
+  "parameterContexts": {},
+  "parameterProviders": {},
+  "flowEncodingVersion": "1.0",
+  "latest": false
+}
