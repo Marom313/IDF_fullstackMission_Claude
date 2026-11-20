@@ -46,6 +46,7 @@
 | G-31 | רשת סגורה | צנרת הקליטה ממומשת כ-`ingest-service` (Java) ולא כ-flow ב-NiFi | זמן (יום אחד), 1.5GB RAM, ואין processor מובנה ל-Ed25519 ב-NiFi | אותם 9 שלבים ואותו סדר (ADR 0007): חתימה, SHA-256, dedup, סכמה, quarantine עם סיבה, ו-audit | flow ב-NiFi (מיפוי processors ב-ADR 0007) מאחורי diode ו-CDR, או השארת השירות כשכבת אימות שנייה | 🟠 | M |
 | G-32 | סקייל | `--scale eligibility-service=3` עולה healthy, אבל ה-gateway מחזיק חיבורי keep-alive וכל התעבורה מגיעה למופע אחד | Reactor Netty מחזיק pool ו-resolver משלו, ואין service registry בסביבת compose | נמדד: p95=20ms ב-200 RPS על מופע יחיד, כלומר הצוואר אינו ה-eligibility | Kubernetes Service (kube-proxy), או Spring Cloud LoadBalancer עם discovery | 🟢 | S |
 | G-33 | אבטחה | ערוץ ה-chaos (`/api/chaos`) פתוח לכל משתמש מאומת | נועד להדגמה בלייב | רק דרך ה-gateway (JWT). ה-mock עצמו לא חשוף מחוץ ל-localhost | הסרה בפרודקשן (mock-state לא קיים שם) | 🟢 | S |
+| G-34 | תפעול | Observability בסיסי: metrics ודשבורד, בלי alerting, בלי distributed tracing ובלי ריכוז לוגים | זמן | Prometheus ו-Grafana עם RED metrics, correlation-id בכל לוג ובכל אירוע Kafka, ולוגים ב-JSON | Alertmanager (p95 ו-5xx), OpenTelemetry tracing, ו-Loki/ELK ארגוני | 🟠 | S |
 | G-17 | תהליך | המערכת נבנתה בפחות מ-48 שעות | לוח הזמנים של הראיון | קו MVP מוגדר, `verify` ירוק בכל שלב, ותיעוד מלא (SPEC, ADR, WORKLOG) | סקירת קוד של צוות, ו-hardening לפי ממצאי מסמך זה | 🟢 | M |
 
 ## סיכום למראיין

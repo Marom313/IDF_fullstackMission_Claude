@@ -3,14 +3,14 @@ SHELL := bash
 export COMPOSE_PARALLEL_LIMIT := 2
 export DOCKER_BUILDKIT := 1
 ALL_PROFILES := --profile core --profile ingest --profile observability
-.PHONY: help up down reset logs ps seed verify demo env perf batch chaos
+.PHONY: help up down reset logs ps seed verify demo env perf batch chaos smoke
 
 help:
-	@echo "ipp commands: up | down | seed | verify | demo | logs [s=svc] | ps | reset | perf | batch [a=--tamper] | chaos [on=false]"
+	@echo "ipp commands: up | down | seed | verify | demo | logs [s=svc] | ps | reset | smoke | perf | batch [a=--tamper] | chaos [on=false]"
 env:
 	@[ -f .env ] || cp .env.example .env
 up: env
-	docker compose --profile core --profile ingest up -d --build --wait --wait-timeout 600
+	docker compose $(ALL_PROFILES) up -d --build --wait --wait-timeout 900
 down:
 	docker compose $(ALL_PROFILES) down
 reset:
@@ -32,3 +32,5 @@ batch:
 	node scripts/ingest/make-batch.mjs $(a)
 chaos:
 	bash scripts/chaos.sh $(or $(on),true)
+smoke:
+	node scripts/smoke.mjs

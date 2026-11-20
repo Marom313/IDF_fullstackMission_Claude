@@ -157,3 +157,24 @@
 - driver1 שלח בקשת DRIVER וקיבל `APPROVE` (`driver-transport@v2`).
 - worker1 שלח בקשת MEDICAL (תור בעוד 7 ימים) וקיבל `APPROVE` (`medical-entry@v2`).
 - `ipp verify`: ירוק.
+
+## 20/11/2026 18:30 · Observability, smoke test והרצה מאפס
+**מה נעשה:**
+- profile בשם `observability`:
+  - Prometheus עם DNS service discovery (גם מופעי `--scale` נסרקים).
+  - Grafana עם דשבורד "IPP – System overview": 12 פאנלים (p50/p95/p99 של בדיקת זכאות, cache hit, circuit breakers, RPS לכל שירות, 4xx/5xx, Kafka listeners, JVM heap, Hikari). הדשבורד מוגדר כקוד (`infra/grafana/build-dashboard.mjs`) ונטען אוטומטית.
+- `scripts/smoke.mjs` (`ipp smoke`): **56 בדיקות מקצה לקצה** לכל התפקידים והזרימות.
+- README עם מסלול לימוד.
+- `ipp up` מעלה את שלושת ה-profiles.
+
+**הרצה מאפס** (`ipp reset` ואז `ipp up` ואז `ipp smoke`, דרך PowerShell):
+- כל השירותים healthy תוך **112 שניות**, כשהתמונות כבר במטמון.
+- **smoke: 56/56.**
+- זיכרון כולל: כ-3.4GB.
+
+**מושג:** **RED metrics.** לכל שירות מודדים Rate (בקשות לשנייה), Errors (4xx/5xx) ו-Duration (p95/p99). שלושת המדדים האלה עונים על "האם המשתמשים סובלים עכשיו?". הדשבורד בנוי סביבם, ומעליהם מדדי משאבים (heap, חיבורי DB).
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **Windows PowerShell 5.1 עם `$ErrorActionPreference="Stop"`:** הפלט של docker ל-stderr (הודעות progress) הפך ל-NativeCommandError שעצר את `ipp.ps1 reset`. הפתרון: `Continue`, ובדיקת `$LASTEXITCODE` אחרי כל פקודה (`Invoke-Native`).
+2. **Grafana ברשת סגורה מנסה לבדוק עדכונים ולטעון news feed.** בוטל דרך משתני `GF_ANALYTICS_*` ו-`GF_NEWS_*`.
+3. **פאנל של שגיאות בלי שגיאות מציג "No data"**, וזה נראה כמו תקלה. נוסף `vector(0)` כקו בסיס.

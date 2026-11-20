@@ -1,0 +1,68 @@
+# IPP – Prometheus. DNS service discovery (type A) → every --scale replica is scraped automatically.
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+scrape_configs:
+  - job_name: gateway
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [gateway]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: registry-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [registry-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: permit-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [permit-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: eligibility-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [eligibility-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: enforcement-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [enforcement-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: audit-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [audit-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: policy-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [policy-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: mock-state-api
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [mock-state-api]
+        type: A
+        port: 8080
+        refresh_interval: 15s
+  - job_name: ingest-service
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: [ingest-service]
+        type: A
+        port: 8080
+        refresh_interval: 15s

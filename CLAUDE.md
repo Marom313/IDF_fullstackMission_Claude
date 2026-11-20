@@ -28,7 +28,8 @@ presentation_pics/ test.py   ← pre-existing, never touch
 ## Commands (`./ipp.ps1 <cmd>` on Windows, `make <cmd>` in WSL/Git Bash)
 `up` (core profile, waits healthy) · `down` · `reset` (drops volumes) · `logs [svc]` · `ps` ·
 `seed` · `verify` · `demo` · `perf` (k6) · `batch [--tamper|--badsig]` (signed ingest batch) · `chaos on|off`. URLs: app http://localhost · Keycloak http://localhost/auth (admin also
-on :8180) · kafka-ui http://localhost:8085.
+on :8180) · kafka-ui http://localhost:8085 · Grafana http://localhost:3000 · Prometheus :9090.
+`smoke` must stay green (56 checks) after every change that touches a flow.
 
 ## Machine safety (Windows 10, 32GB, Docker Desktop/WSL2)
 - Every compose service has `mem_limit` + `cpus`. Spring: 512m, SerialGC, MaxRAMPercentage=70.
