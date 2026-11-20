@@ -146,3 +146,14 @@
 1. **"קובץ חצי כתוב":** הצנרת מתחילה רק כשכל שלושת הקבצים קיימים, והחתימה נכתבת אחרונה.
 2. **שליחה כפולה:** ל-`crossingId` יש מזהה דטרמיניסטי (hash של הקובץ ומספר השורה), וה-consumer הוא idempotent (inbox).
 3. **מדידת k6 על JVM קר** (C1 בלבד, `TieredStopAtLevel=1`) הראתה p95 של כשנייה. אחרי חימום: 20ms. לכן בתסריט הדמו מחממים לפני.
+
+## 20/11/2026 18:00 · מיזוג `cloud/align-with-main`
+**מה נעשה:**
+- חוקות v2 ל-DRIVER ול-MEDICAL, וחוקה חדשה לתעשייה ושירותים (`work-permit-general`).
+- mock-state מזהה עכשיו את מספרי הזהות של SeedCatalog.
+- ה-branch הישן `cloud/policy-and-mock` לא מוזג שוב.
+
+**דמו מהיר:**
+- driver1 שלח בקשת DRIVER וקיבל `APPROVE` (`driver-transport@v2`).
+- worker1 שלח בקשת MEDICAL (תור בעוד 7 ימים) וקיבל `APPROVE` (`medical-entry@v2`).
+- `ipp verify`: ירוק.
