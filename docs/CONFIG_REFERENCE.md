@@ -8,6 +8,36 @@
 - **כלל ההערות:** כל ערך שהשתנה מברירת המחדל מסומן בקוד בהערה `[MANUAL CHANGE – Marom]`, עם ברירת המחדל המקורית והסיבה לשינוי. `scripts/check-config-comments.sh` אוכף את זה ב-verify.
 - **סודות:** אין סיסמאות בקבצים. כל סיסמה מגיעה ממשתנה סביבה. ב-repo יש רק `.env.example` עם ערכי דמו.
 
+## איפה כל קובץ הגדרות נמצא
+כל הנתיבים יחסיים לשורש ה-repo. בקבצים שמסומנים ב-★ יש ערכים עם `[MANUAL CHANGE – Marom]`.
+
+| קובץ | שייך ל | מה יש בו |
+|---|---|---|
+| `compose.yaml` | כל המערכת | קונטיינרים, פורטים, תקרות זיכרון ו-CPU, פרופילים (core / ingest / nifi) |
+| `.env.example` | כל המערכת | משתני סביבה עם ערכי דמו. מעתיקים ל-`.env`, שלא עולה לגיט |
+| `services/gateway/src/main/resources/application.yaml` | gateway | ניתוב, Keycloak (JWT), rate limit מול Redis |
+| `services/registry-service/src/main/resources/application.yaml` ★ | registry-service | DB דרך PgBouncer, Hikari, Kafka, SeaweedFS |
+| `services/permit-service/src/main/resources/application.yaml` ★ | permit-service | DB, Hikari, Kafka, כתובות policy ו-mock, circuit breaker |
+| `services/eligibility-service/src/main/resources/application.yaml` ★ | eligibility-service | DB, Hikari, Redis (TTL), Kafka consumer |
+| `services/enforcement-service/src/main/resources/application.yaml` ★ | enforcement-service | DB, Hikari, Kafka, תזמון בדיקת "נכנס ולא יצא" |
+| `services/audit-service/src/main/resources/application.yaml` | audit-service | MongoDB, Kafka consumer, תיקיית quarantine |
+| `services/policy-service/src/main/resources/application.yaml` | policy-service | MongoDB, החוקות ההתחלתיות |
+| `services/mock-state-api/src/main/resources/application.yaml` | mock-state-api | seed, הזרקת תקלות |
+| `services/ingest-service/src/main/resources/application.yaml` | ingest-service | תיקיות inbox/archive/quarantine, מפתח ציבורי, Kafka |
+| `services/<שירות>/src/main/resources/db/changelog/db.changelog-master.yaml` | שירותים עם Postgres | הטבלאות (Liquibase) |
+| `libs/java-common/src/main/resources/db/changelog/common.yaml` | כל השירותים | `outbox`, `inbox`, `idempotency_keys` |
+| `infra/postgres/postgresql.conf` ★ | PostgreSQL | timeouts, זיכרון, לוג שאילתות איטיות |
+| `infra/postgres/init/01-roles.sh` | PostgreSQL | סכמה ומשתמש לכל שירות (בעלייה הראשונה) |
+| `infra/pgbouncer/pgbouncer.ini` ★ | PgBouncer | `pool_mode=transaction`, גודל pool |
+| `infra/mongo/init-users.js` | MongoDB | משתמש לכל שירות |
+| `infra/keycloak/ipp-realm.json` | Keycloak | realm, 9 תפקידים, משתמשי דמו |
+| `infra/seaweedfs/s3.json` | SeaweedFS | מפתחות S3 והרשאות |
+| `infra/nginx/nginx.conf` · `security-headers.conf` | NGINX | ניתוב `/`, `/api`, `/auth`; כותרות אבטחה |
+| `infra/migrate/migrate.sh` | migrate | Liquibase לכל השירותים |
+| `infra/ingest/keys/ingest.pub.pem` | ingest-service + NiFi | מפתח ציבורי לבדיקת חתימה (הפרטי ב-`.ingest-keys/`, לא בגיט) |
+| `infra/nifi/Dockerfile` · `infra/nifi/flow/ipp-ingest.flow.json` | NiFi | image עם ה-verifier; הזרימה (נוצרת מ-`scripts/ingest/build-nifi-flow.mjs`) |
+| `apps/web/vite.config.ts` | פרונט | build ושרת פיתוח |
+
 ## מה כל שירות עושה
 | שירות | מה הוא עושה, במשפט אחד | דוגמה מהדמו | איפה הנתונים שלו |
 |---|---|---|---|
