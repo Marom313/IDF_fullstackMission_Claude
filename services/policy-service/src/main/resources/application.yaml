@@ -1,5 +1,5 @@
 server:
-  port: 8084
+  port: 8080            # same as every IPP service
   shutdown: graceful
 
 spring:
@@ -10,22 +10,31 @@ spring:
       enabled: true          # Java 21 virtual threads: cheap blocking I/O per request
   data:
     mongodb:
-      # compose: mongodb://ipp_admin:${MONGO_ROOT_PASSWORD}@mongo:27017/ipp_policies?authSource=admin
-      uri: ${MONGO_URI:mongodb://localhost:27017/ipp_policies}
-      auto-index-creation: true   # creates the unique (name, version) index from @CompoundIndex
+      # least-privilege user created by infra/mongo/init-users.js (readWrite on ipp_policies only)
+      uri: ${MONGO_URI:mongodb://policy_svc:${MONGO_POLICY_PASSWORD:dev_mongo_policy}@${MONGO_HOST:mongo}:27017/ipp_policies?authSource=ipp_policies}
+      # [MANUAL CHANGE – Marom] auto-index-creation
+      # ברירת מחדל: false (מאז Spring Data MongoDB 3.0) → ערך חדש: true
+      # למה: בלי זה האינדקס הייחודי (name, version) לא נוצר, ושני פקידים יכולים לשמור את אותה גרסה פעמיים
+      auto-index-creation: true
   jackson:
     default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${KEYCLOAK_ISSUER_URI:}
+          # same pattern as the other services: keys fetched inside the compose network
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
 
 ipp:
   security:
-    enabled: ${IPP_SECURITY_ENABLED:false}
+    enabled: ${IPP_SECURITY_ENABLED:true}
   policy:
     seed-enabled: ${IPP_POLICY_SEED:true}
+    # [MANUAL CHANGE – Marom] snapshot-refresh
+    # ברירת מחדל: אין (הגדרה שלנו) → ערך חדש: PT30S
+    # למה: מופע אחר עלול לפרסם חוקה; כל מופע מרענן את רשימת החוקות הפעילות בזיכרון כל 30 שניות
     snapshot-refresh: PT30S
 
 management:
@@ -39,11 +48,9 @@ management:
         enabled: true
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
   api-docs:
     path: /v3/api-docs
 
 logging:
   level:
-    com.ipp: INFO
+    il.ipp: INFO

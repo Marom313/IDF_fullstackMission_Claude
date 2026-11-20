@@ -23,7 +23,7 @@ config/        חיווט Spring, אבטחה (Keycloak roles), טעינת חוק
 ```
 ArchUnit (`ArchitectureTest`) אוכף את הגבולות.
 
-## API (פורט 8084)
+## API (פורט 8080 בתוך compose, כמו כל השירותים)
 | Method | Path | תיאור |
 |---|---|---|
 | POST | `/api/policies/validate` | בדיקת טקסט בלי שמירה |
@@ -37,6 +37,10 @@ ArchUnit (`ArchitectureTest`) אוכף את הגבולות.
 | POST | `/api/policies/evaluate` | `{facts}`, ומחזיר החלטה, נימוקים ו-trace |
 | POST | `/api/policies/required-fields` | `{facts: {permit: {type}}}` |
 | GET | `/api/policies/vocabulary` | פונקציות ומקורות נתונים מותרים (השלמה אוטומטית) |
+| POST | `/internal/policies/evaluate` | **החוזה של permit-service ב-main:** `{permitType, facts}` עם מפתחות שטוחים (`"person.age"`), ומחזיר `{decision, reasons, policyVersion, validityDays}` |
+| GET | `/internal/policies/required-fields?permitType=` | **החוזה של permit-service:** מחזיר `{requiredFields}` |
+
+`/internal/**` פתוח בלי JWT, כי ה-gateway לא מנתב אליו ולכן הוא נגיש רק מתוך רשת compose (פער: mTLS בפרודקשן).
 
 Swagger: `/swagger-ui.html`
 
@@ -54,21 +58,23 @@ Swagger: `/swagger-ui.html`
   "today":    "2026-11-20"
 }
 ```
-סוגי היתר בחוקות הדמו: `WORK_ENTRY`, `DRIVER_TRANSPORT`, `MEDICAL`, `EXIT_ABROAD`.
+סוגי היתר בחוקות הדמו, תואמים ל-`PermitType` ב-main: `WORK_ENTRY` (שלוש חוקות לפי ענף), `DRIVER`, `MEDICAL`. סטטוס ביטחוני: `CLEAR` / `PENDING` / `DENIED`.
+אם לא נשלח `form`, שדות החובה לא נבדקים (permit-service בודק את הטופס בעצמו).
 
 ## הגדרות
 | משתנה | ברירת מחדל | הערה |
 |---|---|---|
-| `MONGO_URI` | `mongodb://localhost:27017/ipp_policies` | ב-compose: `mongodb://ipp_admin:${MONGO_ROOT_PASSWORD}@mongo:27017/ipp_policies?authSource=admin` |
-| `IPP_SECURITY_ENABLED` | `false` | ב-compose: `true` |
-| `KEYCLOAK_ISSUER_URI` | ריק | חובה כש-security פעיל |
+| `MONGO_POLICY_PASSWORD` | `dev_mongo_policy` | המשתמש `policy_svc` מ-`infra/mongo/init-users.js` |
+| `IPP_SECURITY_ENABLED` | `true` | בטסטים: `false` |
+| `JWK_SET_URI` | Keycloak בתוך compose | כמו בשאר השירותים |
 | `IPP_POLICY_SEED` | `true` | טוען את `resources/policies/*.ipp` ומפרסם אותם |
 
-## ✅ מה נבדק ומה לא (חשוב לסוכן ב-VS Code)
-- **נבדק בענן:** domain ו-application. ה-parser נוצר מהדקדוק עם ANTLR 4.13.2 וקומפל עם javac; 31 טסטים עברו (`PolicyParserTest`, `EvaluatorTest`, `PolicyCatalogServiceTest`).
-- **לא קומפל בענן** (הגישה ל-Maven Central חסומה שם): `adapters/`, `config/`, `PolicyApiIntegrationTest`, `ArchitectureTest`.
-- **TODO במיזוג:**
-  1. להחליף את ה-`<parent>` ב-pom ל-parent של ה-monorepo.
-  2. להריץ `mvn verify` ולתקן מה שצריך.
-  3. להוסיף את השירות ל-compose (Mongo, Keycloak, `mem_limit: 512m`) ולנתב ב-gateway את `/api/policies/**`.
-  4. להחליף את `PolicyEventPublisher` (כרגע רק כותב ללוג) ב-outbox המשותף.
+## ✅ מה נבדק
+- **נבדק בענן:** domain ו-application, 35 טסטים (כולל החוזה השטוח של permit-service וטבלת שדות החובה לפי `PermitType`).
+- **לא קומפל בענן** (הגישה ל-Maven Central חסומה שם): adapters, config, ו-integration tests.
+- **מוכן למיזוג:** package `il.ipp.policy`, parent הוא `ipp-parent`, פורט 8080, ובנייה דרך `services/Dockerfile` המשותף.
+- **TODO במיזוג (הסוכן ב-VS Code):**
+  1. להוסיף `<module>policy-service</module>` ו-`<module>mock-state-api</module>` ל-`services/pom.xml`.
+  2. להוסיף ל-compose לפי התבנית של `spring-service`: `MONGO_POLICY_PASSWORD`, ו-depends_on על mongo ו-keycloak. פורט דיבוג מוצע: `127.0.0.1:8087`.
+  3. להריץ `mvn -f services/pom.xml verify`.
+  4. אופציונלי: להחליף את `PolicyEventPublisher` ב-outbox המשותף.

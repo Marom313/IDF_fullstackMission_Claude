@@ -1,5 +1,5 @@
 server:
-  port: 8090
+  port: 8080            # same as every IPP service
   shutdown: graceful
 
 spring:
@@ -7,14 +7,11 @@ spring:
     name: mock-state-api
   threads:
     virtual:
-      enabled: true
+      enabled: true     # chaos latency uses Thread.sleep; on virtual threads a sleeping request is almost free
   jackson:
     default-property-inclusion: non_null
-
-ipp:
-  mock:
-    seed: ${IPP_MOCK_SEED:42}                     # same seed in every environment = same synthetic people
-    population-size: ${IPP_MOCK_POPULATION:5000}
+    serialization:
+      write-dates-as-timestamps: false
 
 management:
   endpoints:
@@ -27,5 +24,5 @@ management:
         enabled: true
 
 springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
