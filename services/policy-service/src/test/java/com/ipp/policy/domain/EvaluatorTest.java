@@ -105,12 +105,23 @@ class EvaluatorTest {
         PolicyDefinition medical = parseOk(PolicyTestSupport.resource("04-medical-entry.ipp"));
         Map<String, Object> data = goodWorker();
         sub(data, "permit").put("type", "MEDICAL");
-        sub(data, "person").put("securityStatus", "REVIEW");
-        sub(data, "form").putAll(Map.of("hospitalReferral", "R-1", "appointmentDate", "2026-11-25"));
+        sub(data, "person").put("securityStatus", "PENDING");
+        sub(data, "form").putAll(Map.of("hospitalName", "HOSPITAL-1", "appointmentDate", "2026-11-25"));
         assertEquals(Decision.Outcome.APPROVE, evaluator.evaluate(medical, new Facts(data)).outcome());
 
         sub(data, "form").put("appointmentDate", "2027-03-01");   // more than 30 days away
         assertEquals(Decision.Outcome.REFER_TO_CLERK, evaluator.evaluate(medical, new Facts(data)).outcome());
+    }
+
+    @Test
+    void generalWorkPolicyReadsQuotaOfTheEmployersSector() {
+        PolicyDefinition general = parseOk(PolicyTestSupport.resource("06-work-general.ipp"));
+        Map<String, Object> data = goodWorker();
+        sub(data, "employer").put("sector", "SERVICES");
+        data.put("quotas", new java.util.HashMap<>(Map.of("SERVICES", Map.of("remaining", 2))));
+        assertEquals(Decision.Outcome.APPROVE, evaluator.evaluate(general, new Facts(data)).outcome());
+        data.put("quotas", new java.util.HashMap<>(Map.of("SERVICES", Map.of("remaining", 0))));
+        assertEquals(Decision.Outcome.REFER_TO_CLERK, evaluator.evaluate(general, new Facts(data)).outcome());
     }
 
     @Test

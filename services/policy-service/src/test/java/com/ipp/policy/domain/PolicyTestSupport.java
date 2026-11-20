@@ -16,7 +16,7 @@ public final class PolicyTestSupport {
 
     public static final List<String> SEED_FILES = List.of(
             "01-work-construction.ipp", "02-work-agriculture.ipp", "03-driver-transport.ipp",
-            "04-medical-entry.ipp", "05-exit-abroad.ipp");
+            "04-medical-entry.ipp", "05-exit-abroad.ipp", "06-work-general.ipp");
 
     public static final String CONSTRUCTION = """
             RULE "work-permit-construction" VERSION 3 EFFECTIVE 2026-12-01

@@ -76,7 +76,7 @@ class StateController {
         return Map.of("offset", offset, "limit", limit, "total", population.size(), "ids", ids);
     }
 
-    @Operation(summary = "בדיקת ספרת ביקורת של מספר זהות (בלי לחשוף אם הוא קיים)")
+    @Operation(summary = "בדיקת ספרת ביקורת של מספר זהות. מזהי הדמו (90…, 98…) הם טווח שמור ללא ספרת ביקורת")
     @GetMapping("/validate-id/{id}")
     Map<String, Object> validateId(@PathVariable String id) {
         return Map.of("idNumber", id, "wellFormed", IdNumbers.isValid(id));
@@ -86,7 +86,7 @@ class StateController {
 
     private <T> T lookup(String id, Function<PersonSummary, T> pick) {
         applyChaos();
-        if (!IdNumbers.isValid(id)) throw new BadId(id);
+        if (id == null || !id.matches("\\d{9}")) throw new BadId(id);
         LocalDate today = LocalDate.now(clock);
         return population.find(id, today).map(pick).orElseThrow(() -> new NotFound(id));
     }

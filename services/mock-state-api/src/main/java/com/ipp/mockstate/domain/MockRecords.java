@@ -18,7 +18,8 @@ public final class MockRecords {
     /** Security status. {@code reasonCode} is an opaque code, never free text, as in real classified interfaces. */
     public record SecurityRecord(String idNumber, SecurityStatus status, String reasonCode, LocalDate reviewedOn) { }
 
-    public enum SecurityStatus { CLEAR, REVIEW, DENIED }
+    /** Same vocabulary as main (registry-service / SeedCatalog). */
+    public enum SecurityStatus { CLEAR, PENDING, DENIED }
 
     public record CriminalRecord(String idNumber, boolean hasRecord, boolean hasOpenCase, Severity caseSeverity) { }
 
