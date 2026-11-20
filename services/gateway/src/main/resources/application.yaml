@@ -45,6 +45,11 @@ spring:
             - id: mock-state
               uri: http://mock-state-api:8080
               predicates: [ "Path=/api/state/**" ]
+            # chaos switch for the live demo (drop / slow down mock-state-api)
+            - id: mock-state-chaos
+              uri: http://mock-state-api:8080
+              predicates: [ "Path=/api/chaos/**" ]
+              filters: [ "RewritePath=/api/chaos/?(?<rest>.*), /admin/chaos" ]
           httpclient:
             connect-timeout: 1000
             response-timeout: 10s

@@ -20,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * End-to-end through HTTP and a real Mongo (Testcontainers). Seed policies are loaded on startup.
  * NOTE: written in the cloud sandbox without Maven access; first executed by the VS Code agent.
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(properties = "ipp.security.enabled=false")
 @AutoConfigureMockMvc
 class PolicyApiIntegrationTest {

@@ -25,6 +25,8 @@
     <module>eligibility-service</module>
     <module>enforcement-service</module>
     <module>audit-service</module>
+    <module>policy-service</module>
+    <module>mock-state-api</module>
   </modules>
 
   <properties>

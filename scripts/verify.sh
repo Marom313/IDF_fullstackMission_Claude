@@ -21,8 +21,11 @@ docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.28.0 dir /repo --no-bann
 
 if [ -f services/pom.xml ]; then
   step "backend: mvn verify (tests + ArchUnit + SBOM)"
+  # docker socket → Testcontainers starts real Mongo/Postgres/Kafka for integration tests
   docker run --rm -v "$PWD:/ws" -v ipp-m2:/root/.m2 -w /ws/services \
-    -e MAVEN_OPTS="-Xmx768m" --memory 1536m --cpus 2 \
+    -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+    -e TESTCONTAINERS_RYUK_DISABLED=true --add-host host.docker.internal:host-gateway \
+    -e MAVEN_OPTS="-Xmx1g -XX:+UseSerialGC" --memory 2g --cpus 2 \
     "$MAVEN_IMAGE" mvn -q -B -T 2 verify ${MVN_ARGS:-}
 fi
 

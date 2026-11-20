@@ -66,3 +66,26 @@
 3. **PgBouncer במצב transaction מול JDBC:** `prepared statement "S_1" already exists`. הפתרון: `prepareThreshold=0` ב-URL של כל שירות.
 4. **ArchUnit JUnit5 engine דיווח 0 בדיקות תחת surefire.** הבדיקות הוסבו ל-`@Test` רגילים עם `rule.check()`, כך שבטוח שהן רצות.
 5. **מחיקת cache לפני commit** הייתה עלולה להחזיר ל-Redis מצב ישן. לכן ה-evict מתבצע ב-`afterCommit`.
+
+## 20/11/2026 16:00 · אינטגרציה: policy-service ו-mock-state-api (מסוכן הענן)
+**מה נעשה:**
+- מיזוג `cloud/policy-and-mock`. היומן של סוכן הענן נמצא ב-`docs/worklog/cloud-agent.md`.
+- שני המודולים עברו ל-parent של ה-monorepo, נוספו ל-compose (Mongo user ייעודי ו-JWT מ-Keycloak) ול-gateway (`/api/policies/**`, `/api/state/**`, `/api/chaos/**`).
+- ה-adapter של permit-service עודכן לחוזה האמיתי: facts מקוננים, `POST /api/policies/evaluate`, ומיפוי `APPROVE/REJECT/REFER/NOT_APPLICABLE/INCOMPLETE`. ה-JWT של המשתמש מועבר הלאה (zero-trust).
+
+**תוצאה מקצה לקצה:**
+1. מעסיק מגיש בקשה, ו-policy-service מחזיר `work-permit-construction@v1` עם נימוקים בעברית.
+2. פקיד מאשר.
+3. Kafka.
+4. בדיקה במעבר: `ALLOW`, `pv=work-permit-construction@v1`.
+
+נבדקו גם:
+- **Idempotency-Key:** אותו מפתח מחזיר את אותה בקשה.
+- **chaos** (`outage=true`): ההמלצה הופכת ל-`REFER_TO_CLERK` עם `STATE_SYSTEMS_UNAVAILABLE`, ואישור נחסם עם 503. זה fail-safe.
+
+**מושג:** **Zero-trust בין שירותים.** permit-service לא "סומך" על הרשת הפנימית. הוא מעביר את ה-JWT של המשתמש, ו-policy-service בודק אותו שוב. גם מי שחדר לרשת הפנימית לא יכול לפרסם חוקה.
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **mock-state מחזיר 400 על ת"ז בלי ספרת ביקורת תקינה.** במימוש הראשון זה פתח את ה-circuit breaker. 4xx הוא תשובה עסקית ולא תקלה, ולכן הוא נתפס ב-adapter ולא נספר ככשל.
+2. **`issuer-uri` בלבד ב-resource server גורם ל-discovery מול `localhost` מתוך הקונטיינר, וזה נכשל.** הוגדרו גם `jwk-set-uri` (פנימי) וגם `issuer-uri` (לאימות ה-claim בלבד).
+3. **מיזוג pom עם regex:** `<parent>` שהופיע בתוך הערת XML נבלע. תוקן ידנית. לקח: לא לערוך XML עם regex חמדני.

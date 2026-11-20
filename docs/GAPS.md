@@ -36,6 +36,10 @@
 | G-21 | בדיקות | בדיקות Testcontainers (Postgres, Kafka, Mongo ו-Redis אמיתיים) לא נכתבו עדיין | זמן. בנוסף, Testcontainers בתוך קונטיינר Maven דורש Docker socket ב-Windows | בדיקות domain ו-ArchUnit בכל שירות, ובדיקת E2E ידנית מלאה מול ה-stack (מתועדת ב-WORKLOG) | Testcontainers לכל adapter, ובדיקות חוזה מול OpenAPI ב-CI | 🟠 | M |
 | G-22 | מסמכים | OpenAPI נוצר code-first (springdoc) ומיוצא ל-`contracts/openapi/*.json`, במקום spec-first | זמן | ה-spec המיוצא נכנס ל-git, וממנו נוצרים טיפוסי הפרונט. שינוי חוזה גלוי ב-diff | spec-first עם openapi-generator, ובדיקת תאימות לאחור (openapi-diff) ב-CI | 🟢 | S |
 | G-23 | נתונים | אינדקסים ב-Mongo נוצרים בקוד בעלייה (`ensureIndex`), בלי Mongock | פשטות. הפעולה אידמפוטנטית | אינדקסים מוגדרים במקום אחד בקוד, והרשאות append-only נאכפות ברמת Mongo (custom role) | Mongock למיגרציות מגורסות | 🟢 | S |
+| G-24 | מדיניות | הסימולציה רצה על בקשות סינתטיות | עדיין אין היסטוריית בקשות אמיתית | 1,000–10,000 מקרים דטרמיניסטיים (seed קבוע) | הרצה חוזרת על בקשות אמיתיות מהחודש האחרון מ-permit-service (read replica) | 🟠 | S |
+| G-25 | מדיניות | אירוע `policy.published` נכתב ללוג ולא נשלח דרך outbox | Mongo צריך replica set לטרנזקציה מרובת מסמכים | port מוכן (`PolicyEventPublisher`) ו-snapshot שמתרענן כל 30 שניות | Mongo replica set ו-outbox, או CDC | 🟠 | S |
+| G-26 | מדיניות | מיקום שגיאות סמנטיות (שורה/עמודה) כללי | ה-AST לא שומר מיקומים | שגיאות תחביר מדויקות, ושגיאות סמנטיות עם הודעה ברורה | שמירת token positions ב-AST | 🟢 | S |
+| G-27 | אינטגרציה | האוכלוסייה הסינתטית של mock-state-api (ת"ז עם ספרת ביקורת) שונה מזו של ה-registry (קידומות 90/98) | שני הסוכנים בנו במקביל, כל אחד עם seed משלו | תשובות 400/404 מ-mock-state מטופלות כ-`NOT_FOUND` (תשובה עסקית שלא פותחת circuit breaker), וההחלטה נופלת לסטטוס של ה-registry. נפילה או השהיה מוזרקת עדיין מדגימה circuit breaker ו-fail-safe | מקור אמת אחד לזהויות (המרשם האמיתי), ו-adapter אמיתי | 🟢 | S |
 | G-17 | תהליך | המערכת נבנתה בפחות מ-48 שעות | לוח הזמנים של הראיון | קו MVP מוגדר, `verify` ירוק בכל שלב, ותיעוד מלא (SPEC, ADR, WORKLOG) | סקירת קוד של צוות, ו-hardening לפי ממצאי מסמך זה | 🟢 | M |
 
 ## סיכום למראיין

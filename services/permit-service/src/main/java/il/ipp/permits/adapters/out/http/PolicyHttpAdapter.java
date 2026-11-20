@@ -6,18 +6,21 @@ import il.ipp.permits.domain.PermitType;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /**
- * Adapter to policy-service (DSL evaluator). Circuit breaker + retry with jitter + short timeouts.
- * Fallback: REFER_TO_CLERK with an explicit reason (never auto-approve when policy is unknown).
+ * Adapter to policy-service (ANTLR DSL evaluator, built on branch cloud/policy-and-mock).
+ * Contract: POST /api/policies/evaluate {facts:{person:{..},employer:{..},permit:{type},quotas:{..},form:{..}}}
+ *        → {decision:{outcome, policyName, policyVersion, validityDays, reasons[], missingFields[]}}
+ * Circuit breaker + retry with jitter + short timeouts; the caller's JWT is forwarded.
+ * Fallback: REFER_TO_CLERK with an explicit reason (fail-safe, never auto-approve when policy is unknown).
  */
 @Component
 class PolicyHttpAdapter implements PolicyEvaluator {
@@ -28,12 +31,16 @@ class PolicyHttpAdapter implements PolicyEvaluator {
     var rf = new org.springframework.http.client.SimpleClientHttpRequestFactory();
     rf.setConnectTimeout(Duration.ofSeconds(1));
     rf.setReadTimeout(Duration.ofSeconds(2));
-    this.http = RestClient.builder().baseUrl(baseUrl).requestFactory(rf).build();
+    this.http = RestClient.builder().baseUrl(baseUrl).requestFactory(rf)
+        .requestInterceptor(BearerForwarding.INSTANCE).build();
   }
 
-  record EvaluateRequest(String permitType, Map<String, Object> facts) {}
+  record FactsRequest(Map<String, Object> facts) {}
 
-  record EvaluateResponse(String decision, List<String> reasons, String policyVersion, Integer validityDays) {}
+  record DecisionDto(String outcome, String policyName, Integer policyVersion, Long validityDays,
+                     List<String> missingFields, List<String> reasons) {}
+
+  record EvaluationResponse(DecisionDto decision) {}
 
   record RequiredFieldsResponse(List<String> requiredFields) {}
 
@@ -41,13 +48,28 @@ class PolicyHttpAdapter implements PolicyEvaluator {
   @CircuitBreaker(name = "policy", fallbackMethod = "evaluateFallback")
   @Retry(name = "policy")
   public PolicyDecision evaluate(PermitType type, Map<String, Object> facts) {
-    EvaluateResponse r = http.post().uri("/internal/policies/evaluate")
-        .body(new EvaluateRequest(type.name(), facts)).retrieve().body(EvaluateResponse.class);
-    if (r == null) {
+    EvaluationResponse r = http.post().uri("/api/policies/evaluate").body(new FactsRequest(facts)).retrieve()
+        .body(EvaluationResponse.class);
+    if (r == null || r.decision() == null) {
       throw new IllegalStateException("empty policy response");
     }
-    return new PolicyDecision(r.decision(), r.reasons() == null ? List.of() : r.reasons(), r.policyVersion(),
-        r.validityDays() == null ? 90 : r.validityDays());
+    DecisionDto d = r.decision();
+    List<String> reasons = new ArrayList<>(d.reasons() == null ? List.of() : d.reasons());
+    if (d.missingFields() != null && !d.missingFields().isEmpty()) {
+      reasons.add("MISSING_FIELDS:" + String.join(",", d.missingFields()));
+    }
+    String outcome = switch (d.outcome()) {
+      case "APPROVE" -> "APPROVE";
+      case "REJECT" -> "REJECT";
+      case "NOT_APPLICABLE" -> {
+        reasons.add("NO_APPLICABLE_POLICY");
+        yield "REFER_TO_CLERK";
+      }
+      default -> "REFER_TO_CLERK"; // REFER_TO_CLERK, INCOMPLETE
+    };
+    String version = d.policyName() == null ? "n/a" : d.policyName() + "@v" + d.policyVersion();
+    int days = d.validityDays() == null ? 90 : d.validityDays().intValue();
+    return new PolicyDecision(outcome, reasons, version, days);
   }
 
   PolicyDecision evaluateFallback(PermitType type, Map<String, Object> facts, Throwable t) {
@@ -58,9 +80,11 @@ class PolicyHttpAdapter implements PolicyEvaluator {
   @Override
   @CircuitBreaker(name = "policy", fallbackMethod = "requiredFallback")
   public List<String> requiredFields(PermitType type) {
-    RequiredFieldsResponse r = http.get().uri("/internal/policies/required-fields?permitType={t}", type.name())
-        .retrieve().body(new ParameterizedTypeReference<>() {});
-    return r == null || r.requiredFields() == null ? type.defaultRequiredFields() : r.requiredFields();
+    RequiredFieldsResponse r = http.post().uri("/api/policies/required-fields")
+        .body(new FactsRequest(Map.of("permit", Map.of("type", type.name())))).retrieve()
+        .body(RequiredFieldsResponse.class);
+    return r == null || r.requiredFields() == null || r.requiredFields().isEmpty()
+        ? type.defaultRequiredFields() : r.requiredFields();
   }
 
   List<String> requiredFallback(PermitType type, Throwable t) {

@@ -97,8 +97,13 @@ public class PermitService {
     } catch (PermitRuleViolation e) {
       throw new DomainException(e.code(), 422, e.getMessage());
     }
-    PolicyDecision d = policy.evaluate(cmd.type(), facts(person, licenseId));
-    p.recordRecommendation(d.decision(), d.reasons(), d.policyVersion());
+    String sec = state.securityStatus(person.nationalId());
+    PolicyDecision d = policy.evaluate(cmd.type(), facts(person, licenseId, cmd.type(), p.formData(), sec));
+    List<String> why = new java.util.ArrayList<>(d.reasons());
+    if ("UNAVAILABLE".equals(sec)) {
+      why.add("STATE_SYSTEMS_UNAVAILABLE");
+    }
+    p.recordRecommendation("UNAVAILABLE".equals(sec) ? "REFER_TO_CLERK" : d.decision(), why, d.policyVersion());
     Permit saved = permits.save(p);
     if (idempotencyKey != null && !idempotency.remember(idempotencyKey, "permit-submit", saved.id().toString())) {
       throw DomainException.conflict("DUPLICATE_REQUEST", "Concurrent request with the same Idempotency-Key");
@@ -121,8 +126,12 @@ public class PermitService {
       if (approve) {
         PersonRef person = persons.find(p.personId()).orElseThrow(() -> DomainException.notFound("Person"));
         String sec = state.securityStatus(p.nationalId());
-        if ("DENIED".equals(sec)) {
+        if ("DENIED".equals(sec) || ("NOT_FOUND".equals(sec) && "DENIED".equals(person.securityStatus()))) {
           throw new DomainException("SECURITY_DENIED", 422, "Security check denied – cannot approve");
+        }
+        if ("UNAVAILABLE".equals(sec)) {
+          throw new DomainException("STATE_CHECK_UNAVAILABLE", 503,
+              "State security check is unavailable (circuit open) – approval is blocked until it recovers");
         }
         if (p.type() == PermitType.WORK_ENTRY) {
           String sector = licenses.findById(p.licenseId()).map(License::sector).orElse("SERVICES");
@@ -130,7 +139,7 @@ public class PermitService {
             throw new DomainException("QUOTA_EXHAUSTED", 422, "Sector quota exhausted: " + sector);
           }
         }
-        PolicyDecision d = policy.evaluate(p.type(), facts(person, p.licenseId()));
+        PolicyDecision d = policy.evaluate(p.type(), facts(person, p.licenseId(), p.type(), p.formData(), sec));
         int days = validityDays != null ? validityDays : d.validityDays();
         p.approve(u.username(), days, LocalDate.now(IL), reasons == null || reasons.isEmpty()
             ? List.of("APPROVED_BY_CLERK", "SECURITY:" + sec) : reasons);
@@ -287,21 +296,44 @@ public class PermitService {
     throw DomainException.notFound("Permit");
   }
 
-  private Map<String, Object> facts(PersonRef person, UUID licenseId) {
+  /**
+   * Facts in the shape policy-service expects (nested map). Security status: the state system's answer
+   * wins (REVIEW → PENDING); NOT_FOUND → our registry's mock status; UNAVAILABLE → unknown (null), so the
+   * three-valued policy logic refers to a clerk instead of approving (fail-safe).
+   */
+  private Map<String, Object> facts(PersonRef person, UUID licenseId, PermitType type, Map<String, Object> form,
+                                    String stateSecurity) {
     Map<String, Object> f = new HashMap<>();
-    f.put("person.age", person.birthDate() == null ? 0
+    Map<String, Object> p = new HashMap<>();
+    p.put("age", person.birthDate() == null ? null
         : java.time.Period.between(person.birthDate(), LocalDate.now(IL)).getYears());
-    f.put("person.securityStatus", person.securityStatus());
-    f.put("person.region", person.region());
-    f.put("person.nationalId", person.nationalId());
-    f.put("person.id", person.personId().toString());
+    p.put("securityStatus", switch (stateSecurity) {
+      case "CLEAR", "DENIED" -> stateSecurity;
+      case "REVIEW" -> "PENDING";
+      case "UNAVAILABLE" -> null;
+      default -> person.securityStatus();
+    });
+    p.put("region", person.region());
+    p.put("id", person.personId().toString());
+    // mock: a magnetic card number on the form = valid card (production: card registry adapter)
+    p.put("magneticCardValid", form != null && form.get("magneticCard") != null
+        && !form.get("magneticCard").toString().isBlank());
+    f.put("person", p);
+    f.put("permit", Map.of("type", type.name()));
+    f.put("sanctions", Map.of("active", false));
+    f.put("today", LocalDate.now(IL).toString());
+    Map<String, Object> formFacts = new HashMap<>(form == null ? Map.of() : form);
+    formFacts.putIfAbsent("idNumber", person.nationalId());
+    formFacts.putIfAbsent("photo", "s3://photos/persons/" + person.personId() + ".svg");
+    f.put("form", formFacts);
+    Map<String, Object> quotas = new HashMap<>();
+    for (SectorQuota q : licenses.quotas()) {
+      quotas.put(q.sector(), Map.of("remaining", q.remaining(), "total", q.total()));
+    }
+    f.put("quotas", quotas);
     if (licenseId != null) {
-      licenses.findById(licenseId).ifPresent(l -> {
-        f.put("employer.sector", l.sector());
-        f.put("employer.id", l.employerId().toString());
-        licenses.quotas().stream().filter(q -> q.sector().equals(l.sector())).findFirst()
-            .ifPresent(q -> f.put("quota." + l.sector() + ".remaining", q.remaining()));
-      });
+      licenses.findById(licenseId).ifPresent(l ->
+          f.put("employer", Map.of("sector", l.sector(), "id", l.employerId().toString())));
     }
     return f;
   }
