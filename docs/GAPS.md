@@ -40,6 +40,9 @@
 | G-25 | מדיניות | אירוע `policy.published` נכתב ללוג ולא נשלח דרך outbox | Mongo צריך replica set לטרנזקציה מרובת מסמכים | port מוכן (`PolicyEventPublisher`) ו-snapshot שמתרענן כל 30 שניות | Mongo replica set ו-outbox, או CDC | 🟠 | S |
 | G-26 | מדיניות | מיקום שגיאות סמנטיות (שורה/עמודה) כללי | ה-AST לא שומר מיקומים | שגיאות תחביר מדויקות, ושגיאות סמנטיות עם הודעה ברורה | שמירת token positions ב-AST | 🟢 | S |
 | G-27 | אינטגרציה | האוכלוסייה הסינתטית של mock-state-api (ת"ז עם ספרת ביקורת) שונה מזו של ה-registry (קידומות 90/98) | שני הסוכנים בנו במקביל, כל אחד עם seed משלו | תשובות 400/404 מ-mock-state מטופלות כ-`NOT_FOUND` (תשובה עסקית שלא פותחת circuit breaker), וההחלטה נופלת לסטטוס של ה-registry. נפילה או השהיה מוזרקת עדיין מדגימה circuit breaker ו-fail-safe | מקור אמת אחד לזהויות (המרשם האמיתי), ו-adapter אמיתי | 🟢 | S |
+| G-28 | פרונט | CSP מתיר `style-src-attr 'unsafe-inline'` | TanStack Virtual ו-flex layout דורשים style attribute דינמי | רק attributes, בלי `<style>` ובלי סקריפט inline. `script-src 'self'` נשאר קשיח | CSS custom properties דרך CSSOM (`element.style.setProperty`) או nonce-based CSP | 🟢 | S |
+| G-29 | פרונט | Playwright E2E ובדיקת ניגודיות בדפדפן אמיתי לא הורצו | זמן (Stretch) | axe ב-Vitest על מסכי המפתח, ו-ViewModel tests | Playwright לזרימה של כל תפקיד, ו-axe בדפדפן | 🟠 | S |
+| G-30 | פרונט | סריקת QR במצלמה לא מומשה (הדבקת תוכן בלבד) | זמן, והרשאות מצלמה ב-kiosk | אימות חתימה offline ב-WebCrypto Ed25519, ואחריו אימות מול השרת | BarcodeDetector או סורק חומרה (HID) במסוף | 🟢 | S |
 | G-17 | תהליך | המערכת נבנתה בפחות מ-48 שעות | לוח הזמנים של הראיון | קו MVP מוגדר, `verify` ירוק בכל שלב, ותיעוד מלא (SPEC, ADR, WORKLOG) | סקירת קוד של צוות, ו-hardening לפי ממצאי מסמך זה | 🟢 | M |
 
 ## סיכום למראיין

@@ -1,0 +1,20 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "plugins": ["stylelint-use-logical"],
+  "rules": {
+    "csstools/use-logical": ["always", { "except": ["width", "height", "min-width", "min-height", "max-width", "max-height"] }],
+    "property-disallowed-list": ["left", "right", "margin-left", "margin-right", "padding-left", "padding-right", "border-left", "border-right"],
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "scss/dollar-variable-pattern": null,
+    "scss/at-mixin-pattern": null,
+    "no-descending-specificity": null,
+    "declaration-empty-line-before": null,
+    "custom-property-empty-line-before": null,
+    "declaration-property-value-disallowed-list": { "text-align": ["left", "right"], "float": ["left", "right"], "clear": ["left", "right"] },
+    "scss/double-slash-comment-empty-line-before": null,
+    "color-function-notation": null,
+    "alpha-value-notation": null,
+    "media-feature-range-notation": null
+  }
+}

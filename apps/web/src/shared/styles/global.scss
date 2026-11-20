@@ -1,0 +1,83 @@
+@use 'tokens';
+@use 'mixins' as m;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 100%;
+  color: var(--c-text);
+  background: var(--c-bg);
+}
+
+body {
+  margin: 0;
+  line-height: 1.5;
+  min-block-size: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin-block: 0 var(--sp-3);
+}
+
+h1 {
+  font-size: var(--fs-xl);
+}
+
+h2 {
+  font-size: var(--fs-lg);
+}
+
+a {
+  color: var(--c-primary);
+}
+
+:focus-visible {
+  @include m.focus-ring;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  inline-size: 100%;
+}
+
+.visually-hidden {
+  @include m.visually-hidden;
+}
+
+bdi.ltr-data {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.contents {
+  display: contents;
+}
+
+.quota-meter {
+  inline-size: 100%;
+}

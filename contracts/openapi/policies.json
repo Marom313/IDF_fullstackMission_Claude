@@ -1,0 +1,737 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8083",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Policies",
+      "description": "ניהול חוקות: כתיבה ב-DSL, גרסאות, פרסום, סימולציה והערכה"
+    }
+  ],
+  "paths": {
+    "/api/policies": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "רשימת החוקות (הגרסה האחרונה של כל אחת)",
+        "operationId": "list",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "שמירת טיוטה חדשה. ה-VERSION בטקסט חייב להיות גבוה מכל גרסה קיימת",
+        "operationId": "createDraft",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/{name}/versions/{version}/publish": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "פרסום גרסה: הופכת ל-ACTIVE והגרסה הקודמת ל-RETIRED. אידמפוטנטי",
+        "operationId": "publish",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicySummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/validate": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "בדיקת תקינות של טקסט חוקה (ללא שמירה). מחזיר שגיאות עם שורה ועמודה, צורה קנונית ו-AST",
+        "operationId": "validate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/simulate": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "סימולציה: איך טיוטה הייתה מחליטה על N בקשות סינתטיות, לעומת הגרסה הפעילה",
+        "operationId": "simulate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/required-fields": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "שדות חובה לטופס דינמי לפי מה שידוע (למשל רק סוג ההיתר)",
+        "operationId": "requiredFields",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequiredFieldsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/evaluate": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "הערכת מקרה מול כל החוקות הפעילות. אם כמה חלות, התוצאה המחמירה גוברת",
+        "operationId": "evaluate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/{name}/versions": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "operationId": "versions",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/{name}/versions/{version}": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/{name}/diff": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "השוואה בין שתי גרסאות (diff לפי שורות על הצורה הקנונית)",
+        "operationId": "diff",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Line"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/policies/vocabulary": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "אוצר המילים של ה-DSL: פונקציות ומקורות נתונים מותרים (להשלמה אוטומטית בעורך)",
+        "operationId": "vocabulary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "uniqueItems": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SourceRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 0
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "PolicyDetail": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/PolicySummary"
+          },
+          "source": {
+            "type": "string"
+          },
+          "canonicalSource": {
+            "type": "string"
+          },
+          "ast": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "PolicySummary": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "RETIRED"
+            ]
+          },
+          "effectiveFrom": {
+            "type": "string",
+            "format": "date"
+          },
+          "requiredFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sha256": {
+            "type": "string"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedBy": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SyntaxError": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "column": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationReport": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyntaxError"
+            }
+          },
+          "canonicalSource": {
+            "type": "string"
+          },
+          "ast": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "requiredFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "referencedPaths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "SimulateRequest": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 0
+          },
+          "caseCount": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 10000,
+            "minimum": 1
+          },
+          "seed": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "required": [
+          "source"
+        ]
+      },
+      "ChangedCase": {
+        "type": "object",
+        "properties": {
+          "caseId": {
+            "type": "string"
+          },
+          "before": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REFER_TO_CLERK",
+              "NOT_APPLICABLE",
+              "INCOMPLETE"
+            ]
+          },
+          "after": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REFER_TO_CLERK",
+              "NOT_APPLICABLE",
+              "INCOMPLETE"
+            ]
+          },
+          "reasonsAfter": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Result": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "candidateCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "baselineCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "changed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "changedSamples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangedCase"
+            }
+          },
+          "elapsedMicros": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "FactsRequest": {
+        "type": "object",
+        "properties": {
+          "facts": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "facts"
+        ]
+      },
+      "RequiredFieldsResponse": {
+        "type": "object",
+        "properties": {
+          "requiredFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "DecisionDto": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "APPROVE",
+              "REJECT",
+              "REFER_TO_CLERK",
+              "NOT_APPLICABLE",
+              "INCOMPLETE"
+            ]
+          },
+          "policyName": {
+            "type": "string"
+          },
+          "policyVersion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "validityDays": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "missingFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trace": {
+            "$ref": "#/components/schemas/Trace"
+          }
+        }
+      },
+      "EvaluationResponse": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/DecisionDto"
+          },
+          "applicable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DecisionDto"
+            }
+          },
+          "checkedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Trace": {
+        "type": "object",
+        "properties": {
+          "expression": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string",
+            "enum": [
+              "TRUE",
+              "FALSE",
+              "UNKNOWN"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {}
+          }
+        }
+      },
+      "Line": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "SAME",
+              "ADDED",
+              "REMOVED"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

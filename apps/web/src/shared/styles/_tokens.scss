@@ -1,0 +1,70 @@
+// IPP design tokens – original palette: deep navy, olive, desert sand. No official emblems/colors.
+:root {
+  --c-navy-900: #0f1f33;
+  --c-navy-800: #16304d;
+  --c-navy-700: #1f3a5f;
+  --c-navy-500: #3a5f8a;
+  --c-olive-700: #4b5d3a;
+  --c-olive-500: #6b7f4e;
+  --c-sand-100: #f6f1e6;
+  --c-sand-200: #ece3cf;
+  --c-sand-400: #d6c49c;
+  --c-sand-600: #a8905c;
+
+  --c-bg: var(--c-sand-100);
+  --c-surface: #fff;
+  --c-surface-2: #faf7f0;
+  --c-text: #17202b;
+  --c-text-muted: #4a5563;
+  --c-border: #d9d2c1;
+  --c-primary: var(--c-navy-700);
+  --c-primary-contrast: #fff;
+  --c-accent: var(--c-olive-700);
+  --c-focus: #1a73e8;
+
+  // status colors (contrast ≥ 4.5:1 for text on white)
+  --c-allow: #11692f;
+  --c-allow-bg: #e3f4e8;
+  --c-deny: #a3141c;
+  --c-deny-bg: #fbe5e6;
+  --c-refer: #8a5a00;
+  --c-refer-bg: #fff3d6;
+
+  --font-sans: 'Heebo', 'Noto Sans', 'Noto Sans Arabic', system-ui, sans-serif;
+  --fs-xs: 0.8125rem;
+  --fs-sm: 0.875rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.25rem;
+  --fs-xl: 1.625rem;
+  --fs-2xl: 2.25rem;
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-8: 3rem;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 2px rgb(15 31 51 / 8%), 0 4px 14px rgb(15 31 51 / 6%);
+}
+
+:root[data-theme='dark'] {
+  --c-bg: #0d1520;
+  --c-surface: #142131;
+  --c-surface-2: #1a2a3d;
+  --c-text: #e8edf3;
+  --c-text-muted: #a9b5c4;
+  --c-border: #2a3d54;
+  --c-primary: #6f9bd1;
+  --c-primary-contrast: #0d1520;
+  --c-accent: #a7bd84;
+  --c-focus: #8ab4f8;
+  --c-allow: #7fdc9b;
+  --c-allow-bg: #12301d;
+  --c-deny: #ff8a8f;
+  --c-deny-bg: #3a1417;
+  --c-refer: #ffcf6b;
+  --c-refer-bg: #3a2c0c;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+}

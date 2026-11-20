@@ -53,6 +53,8 @@ ipp:
   security:
     jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/auth/realms/ipp/protocol/openid-connect/certs}
     issuer: ${JWT_ISSUER:http://localhost/auth/realms/ipp}
+    # QR public key: terminals fetch it once and verify signatures offline
+    public-paths: /api/permits/keys/qr
   policy:
     url: ${POLICY_URL:http://policy-service:8080}
   mock-state:

@@ -29,13 +29,18 @@ public class SecurityConfig {
 
   @Bean
   @ConditionalOnMissingBean(SecurityFilterChain.class)
-  SecurityFilterChain ippSecurity(HttpSecurity http) throws Exception {
+  SecurityFilterChain ippSecurity(HttpSecurity http,
+                                  @Value("${ipp.security.public-paths:}") String[] publicPaths) throws Exception {
     http.csrf(c -> c.disable())
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(a -> a
-            .requestMatchers("/actuator/health/**", "/actuator/prometheus", "/v3/api-docs/**",
-                "/swagger-ui/**", "/swagger-ui.html", "/internal/**").permitAll()
-            .anyRequest().authenticated())
+        .authorizeHttpRequests(a -> {
+          a.requestMatchers("/actuator/health/**", "/actuator/prometheus", "/v3/api-docs/**",
+              "/swagger-ui/**", "/swagger-ui.html").permitAll();
+          if (publicPaths.length > 0) {
+            a.requestMatchers(publicPaths).permitAll();
+          }
+          a.anyRequest().authenticated();
+        })
         .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(keycloakRoles())));
     return http.build();
   }

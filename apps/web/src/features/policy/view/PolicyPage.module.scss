@@ -1,0 +1,63 @@
+.editorWrap {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.editor {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: var(--fs-sm);
+  min-block-size: 18rem;
+  line-height: 1.6;
+  direction: ltr;
+  text-align: start;
+  white-space: pre;
+}
+
+.preview {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  direction: ltr;
+  background: var(--c-navy-900);
+  color: #d8e1ec;
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  margin: 0;
+  unicode-bidi: plaintext;
+}
+
+.kw {
+  color: #8ab4f8;
+  font-weight: 700;
+}
+
+.str {
+  color: #e6d3a7;
+}
+
+.num {
+  color: #a7bd84;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  button {
+    inline-size: 100%;
+    text-align: start;
+    padding: var(--sp-2);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius-sm);
+    background: var(--c-surface);
+    margin-block-end: var(--sp-2);
+    cursor: pointer;
+
+    &[aria-pressed='true'] {
+      border-color: var(--c-primary);
+      border-width: 2px;
+    }
+  }
+}

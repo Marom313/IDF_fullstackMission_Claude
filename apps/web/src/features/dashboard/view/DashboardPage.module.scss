@@ -1,0 +1,61 @@
+@use '../../../shared/styles/mixins' as m;
+
+.kpis {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  margin-block-end: var(--sp-5);
+}
+
+.kpi {
+  @include m.card;
+
+  padding: var(--sp-4);
+  border-block-start: 4px solid var(--c-accent);
+}
+
+.kpiValue {
+  font-size: var(--fs-2xl);
+  font-weight: 800;
+  color: var(--c-primary);
+}
+
+.kpiLabel {
+  color: var(--c-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(6rem, 9rem) 1fr auto;
+    gap: var(--sp-3);
+    align-items: center;
+    margin-block-end: var(--sp-2);
+  }
+}
+
+.barLabel {
+  font-size: var(--fs-sm);
+}
+
+.meter {
+  inline-size: 100%;
+  block-size: 1rem;
+}
+
+.allow::-webkit-meter-optimum-value {
+  background: var(--c-allow);
+}
+
+.deny::-webkit-meter-optimum-value {
+  background: var(--c-deny);
+}
+
+.refer::-webkit-meter-optimum-value {
+  background: var(--c-refer);
+}

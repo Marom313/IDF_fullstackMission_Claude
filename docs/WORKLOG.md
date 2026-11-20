@@ -89,3 +89,38 @@
 1. **mock-state מחזיר 400 על ת"ז בלי ספרת ביקורת תקינה.** במימוש הראשון זה פתח את ה-circuit breaker. 4xx הוא תשובה עסקית ולא תקלה, ולכן הוא נתפס ב-adapter ולא נספר ככשל.
 2. **`issuer-uri` בלבד ב-resource server גורם ל-discovery מול `localhost` מתוך הקונטיינר, וזה נכשל.** הוגדרו גם `jwk-set-uri` (פנימי) וגם `issuer-uri` (לאימות ה-claim בלבד).
 3. **מיזוג pom עם regex:** `<parent>` שהופיע בתוך הערת XML נבלע. תוקן ידנית. לקח: לא לערוך XML עם regex חמדני.
+
+## 20/11/2026 16:30 · שלב 1–4: פרונט (React + TypeScript, MVVM)
+**מה נעשה:** SPA מלא עם 11 מסכים:
+- מסך מעבר (טאבלט): ירוק/אדום, תמונה, נימוקים מתורגמים, זמן תגובה, אימות QR offline ב-Ed25519, ורישום כניסה ויציאה.
+- פרופיל עובד: היתרים, QR ו-PDF SPECIMEN.
+- טופס בקשה דינמי לפי מדיניות.
+- תור פקיד (virtualized עם keyset).
+- פורטל מעסיק: עובדים לפי אזור (ABAC), מכסות ובדיקת עובד.
+- Policy Studio: ולידציה חיה, הדגשת תחביר, סימולציה על 1,000 מקרים, טיוטה ופרסום.
+- אכיפה: תיקים ופעולות לפי מכונת מצבים.
+- דשבורד.
+- ניהול: DLT replay, הסגר ויומן ביקורת.
+- דף בית והצהרת נגישות.
+
+**ארכיטקטורה:**
+- **MVVM:** model (TanStack Query ו-http), viewmodel (state, לוגיקה ופורמט), view (JSX בלבד). נאכף ב-eslint-plugin-boundaries: view שמייבא model הוא שגיאת lint.
+- **טיפוסים:** נוצרים מ-OpenAPI (`npm run gen:api` עם openapi-typescript).
+- **i18n:** 228 מפתחות × 4 שפות, בדיקה ב-CI, `<html lang dir>` אוטומטי ו-`<bdi>` לנתונים מעורבים.
+- **SSE:** ה-gateway משדר "מה השתנה" בלבד, והפרונט מבטל queries (invalidate).
+- **חבילה offline:** הפונטים (Heebo, Noto Arabic, Noto Cyrillic) נארזים מקומית.
+
+**תוצאות:**
+- `ipp verify` ירוק: tsc strict, eslint, stylelint (logical properties), i18n, 16 בדיקות Vitest כולל axe, ו-build.
+- ה-SPA מוגש מ-NGINX עם CSP קשיח, והתחברות ב-PKCE מול Keycloak עובדת.
+
+**מושגים:**
+- **MVVM:** ה-ViewModel הוא hook שמחזיר את כל מה שהמסך צריך, מוכן לתצוגה. ה-View "טיפש" וקל לבדיקה, וה-ViewModel נבדק עם `renderHook` בלי DOM מסובך.
+- **PKCE:** הדפדפן מייצר סוד חד-פעמי (code_verifier) ושולח רק hash שלו. גם מי שיירט את ה-code לא יכול להחליף אותו ל-token. כך אפליקציה ציבורית לא צריכה client secret.
+- **Virtualization:** רק השורות שנראות על המסך קיימות ב-DOM. 10,000 שורות נגללות חלק.
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **`<img src>` לא שולח Bearer token**, ולכן תמונות ו-PDF נטענים ב-fetch כ-blob ומוצגים עם `URL.createObjectURL`. ה-URL משוחרר ב-unmount כדי למנוע דליפת זיכרון.
+2. **EventSource לא תומך ב-headers.** SSE ממומש ב-fetch streaming עם reconnect.
+3. **vitest 2 מביא vite 5 משלו** (התנגשות טיפוסים עם vite 6). שודרג ל-vitest 3.
+4. **TanStack Virtual משתמש ב-style attributes**, ו-CSP עם `style-src 'self'` חוסם אותם. נוסף רק `style-src-attr 'unsafe-inline'`, בלי `<style>` inline ובלי סקריפטים inline.
