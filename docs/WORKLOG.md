@@ -178,3 +178,21 @@
 1. **Windows PowerShell 5.1 עם `$ErrorActionPreference="Stop"`:** הפלט של docker ל-stderr (הודעות progress) הפך ל-NativeCommandError שעצר את `ipp.ps1 reset`. הפתרון: `Continue`, ובדיקת `$LASTEXITCODE` אחרי כל פקודה (`Invoke-Native`).
 2. **Grafana ברשת סגורה מנסה לבדוק עדכונים ולטעון news feed.** בוטל דרך משתני `GF_ANALYTICS_*` ו-`GF_NEWS_*`.
 3. **פאנל של שגיאות בלי שגיאות מציג "No data"**, וזה נראה כמו תקלה. נוסף `vector(0)` כקו בסיס.
+
+## 21/11/2026 · מיזוג `cloud/nifi-ingest` והרצה חיה של NiFi
+**מה נעשה:**
+- מוזג ה-branch של סוכן הענן: `libs/ingest-verifier`, `infra/nifi`, `make-nifi-batch.mjs`, NIFI.md, SECURITY_CRYPTO.md ו-ADR 0008.
+- ADR 0008 **מאושר**: NiFi (פרופיל `nifi`) ו-ingest-service (פרופיל `ingest`) רצים זה לצד זה.
+- הוסף `scripts/ingest/nifi-import.sh`: ייבוא, Enable ו-Start דרך REST, במקום הקליקים ב-UI.
+- DEMO_SCRIPT: אופציה להראות את הזרימה ב-NiFi בשלב סגירת המעגל.
+- UI: "מצב בהיר/כהה" נקרא עכשיו **"מצב יום/לילה"**, בכל ארבע השפות.
+
+**תוצאות:**
+- `ipp verify` ירוק, `ipp smoke` 56/56.
+- NiFi חי: `ok` הגיע ל-archive, 50 מעברים נשמרו ב-enforcement (`source=NIFI`). `tamper` הגיע ל-quarantine עם `HASH_MISMATCH`.
+
+**מושג: ExecuteStreamCommand.** NiFi מריץ תהליך חיצוני (כאן `java -jar ingest-verifier.jar`). תוכן הקובץ נכנס ב-stdin, ה-stdout הופך ל-FlowFile חדש, וה-exit code וה-stderr נשמרים כ-attributes (`execution.status`, `execution.error`). כך הלוגיקה נשארת בקוד עם טסטים, ו-NiFi אחראי רק על התזמור.
+
+**⚠️ באגים ידועים שנמנעו:**
+1. **`bash` ב-PowerShell הוא WSL:** `C:WindowsSystem32ash.exe` קודם ל-Git Bash ב-PATH. הוא רץ בתוך distro של WSL שאין בו docker, ולכן `ipp.ps1 verify` נכשל ב-gitleaks. הפתרון: `Invoke-Bash` מעדיף את Git Bash באופן מפורש ומדלג על System32.
+2. **`docker compose --profile nifi build nifi` נכשל:** הודעת השגיאה היא "depends on undefined service kafka". השירות ש-nifi תלוי בו נמצא בפרופיל אחר, ולכן צריך גם `--profile core`.

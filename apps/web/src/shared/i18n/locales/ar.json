@@ -9,8 +9,8 @@
     "loginHint": "دخول آمن عبر Keycloak (OIDC + PKCE)",
     "demoUsers": "مستخدمون تجريبيون (كلمة المرور: Passw0rd!)",
     "language": "اللغة",
-    "themeDark": "الوضع الداكن",
-    "themeLight": "الوضع الفاتح",
+    "themeDark": "الوضع الليلي",
+    "themeLight": "الوضع النهاري",
     "welcome": "مرحبًا {{name}}",
     "roles": "الأدوار"
   },

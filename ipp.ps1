@@ -12,8 +12,12 @@ $env:DOCKER_BUILDKIT = "1"
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 
 function Invoke-Bash([string]$script) {
-  $bash = (Get-Command bash -ErrorAction SilentlyContinue).Source
-  if (-not $bash) { $bash = "C:\Program Files\Git\bin\bash.exe" }
+  # Prefer Git Bash: "bash" on PATH is often C:\Windows\System32\bash.exe (WSL), whose distro may lack docker.
+  $bash = "$env:ProgramFiles\Git\bin\bash.exe"
+  if (-not (Test-Path $bash)) {
+    $bash = (Get-Command bash -All -ErrorAction SilentlyContinue | Where-Object { $_.Source -notlike "*\System32\*" } | Select-Object -First 1).Source
+  }
+  if (-not $bash) { Write-Host "ERROR: Git Bash not found (install Git for Windows)" -ForegroundColor Red; exit 1 }
   & $bash $script
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }

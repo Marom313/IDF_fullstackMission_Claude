@@ -9,8 +9,8 @@
     "loginHint": "Безопасный вход через Keycloak (OIDC + PKCE)",
     "demoUsers": "Демо-пользователи (пароль: Passw0rd!)",
     "language": "Язык",
-    "themeDark": "Тёмная тема",
-    "themeLight": "Светлая тема",
+    "themeDark": "Ночной режим",
+    "themeLight": "Дневной режим",
     "welcome": "Здравствуйте, {{name}}",
     "roles": "Роли"
   },

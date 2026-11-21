@@ -19,3 +19,4 @@ ingest/archive/*
 !ingest/**/.gitkeep
 .offline-bundle/
 .ingest-keys/
+ingest/.receipts
