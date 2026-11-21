@@ -56,13 +56,14 @@ ListFile(/ingest/inbox, *.zip, גיל ≥ 5 שניות, primary node)
 node scripts/ingest/make-nifi-batch.mjs ok
 
 # 2. הוספת NIFI_USERNAME / NIFI_PASSWORD ל-.env (העתקה מ-.env.example), ואז:
-docker compose --profile nifi build nifi
+docker compose --profile core --profile nifi build nifi
 docker compose --profile core --profile nifi up -d nifi     # ~1.5GB, פרופיל נפרד: `make up` לא מעלה אותו
 
 # 3. ייבוא הזרימה (רק בפעם הראשונה; נשמר ב-volume nificonf)
 #    https://localhost:8443/nifi  → אזהרת תעודה (self-signed) → התחברות עם NIFI_USERNAME/NIFI_PASSWORD
 #    גוררים "Process Group" לקנבס → אייקון ההעלאה → infra/nifi/flow/ipp-ingest.flow.json → Add
 #    כניסה לקבוצה → Controller Services → Enable ל-"Kafka (kafka:9092)" → קליק ימני על הקנבס → Start
+#    (או במקום שלב 3 כולו: bash scripts/ingest/nifi-import.sh)
 ```
 
 ## תרחישי דמו
@@ -92,10 +93,15 @@ node scripts/ingest/make-nifi-batch.mjs overstay        # worker1 נכנס לפ�
 7. **PublishKafka ב-NiFi 2 עם `Transactions Enabled=true` (ברירת המחדל) מול broker יחיד:** ל-producer טרנזקציוני צריך `transaction.state.log.replication.factor` (ברירת מחדל 3). ב-broker יחיד הטרנזקציה לא מתחילה, וההודעות נתקעות ב-failure. אצלנו הטרנזקציות כבויות, וה-idempotency היא בצד הצרכן (inbox לפי crossingId, `_id` לפי eventId).
 8. **"execution.error" ריק:** NiFi שומר רק את ה-stderr. לכן ה-verifier כותב את הסיבה ל-stderr ואת ההודעות ל-stdout, ולעולם לא מערבב ביניהם.
 
-## מה לא נבדק חי (GAPS G-35)
-סביבת הענן חוסמת את Docker Hub, ולכן הזרימה ב-NiFi לא הורצה שם. מה שנבדק:
-- ה-verifier: 13 טסטים.
-- `make-nifi-batch` → verifier מקצה לקצה: 7 תרחישים.
-- הפלט של `--format console` מול ה-awk של `ingest-direct.sh`.
+## בדיקה חיה (21/11/2026, Windows + Docker Desktop)
+- 13/13 processors במצב VALID ו-RUNNING. ה-flow לא נזקק לשום תיקון.
+- `make-nifi-batch.mjs ok`:
+  - הקובץ הגיע ל-`ingest/archive`.
+  - 51 הודעות ב-Kafka: 50 מעברים ורשומת audit `INGEST_ACCEPTED 50/50`.
+  - enforcement שמר 50 מעברים עם `source=NIFI`.
+  - lag 0, ואין DLT.
+- `make-nifi-batch.mjs tamper`: הקובץ הגיע ל-`ingest/quarantine`, ולצידו `.reason` של `HASH_MISMATCH: manifest … but data.csv is …`.
 
-שמות ה-properties של PublishKafka נבדקו מול התיעוד של NiFi 2.9. על המחשב שלך צריך הרצה חיה אחת.
+**ייבוא בלי UI:** `bash scripts/ingest/nifi-import.sh`. הסקריפט מתחבר, מייבא (אם הקבוצה עוד לא קיימת), מפעיל את שירות ה-Kafka ומריץ Start, דרך ה-REST API של NiFi. אפשר להריץ אותו שוב ושוב בלי נזק.
+
+**תוקן בהרצה:** פקודת ה-build צריכה גם `--profile core`. ה-nifi תלוי ב-kafka, וכשמריצים עם `--profile nifi` לבד, compose נכשל ב-"depends on undefined service".

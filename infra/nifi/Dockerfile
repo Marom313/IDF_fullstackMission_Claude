@@ -1,5 +1,5 @@
 # NiFi + the IPP ingest verifier. Build context = repo root:
-#   docker compose --profile nifi build nifi
+#   docker compose --profile core --profile nifi build nifi
 # Stage 1 compiles the verifier with the plain JDK (no Maven downloads: it has zero dependencies),
 # so the image also builds on the closed network from the offline bundle.
 FROM maven:3.9.11-eclipse-temurin-21 AS build

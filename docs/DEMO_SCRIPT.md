@@ -52,6 +52,12 @@
 3. בדיקה במעבר של 900000005: ✖ "סנקציה פעילה".
 4. `./ipp.ps1 batch --tamper`: מסך ניהול ← **קבצים בהסגר** עם הסיבה (HASH או SIGNATURE).
 5. אכיפה ← התיק ← הגשת ערעור ← קבלת הערעור. הסנקציה מוסרת והבדיקה במעבר חוזרת לרגיל.
+6. **(אופציונלי) אותה הלבנה ב-NiFi, כפי שנדרש בקול הקורא:** מעלים לפני הדמו, כי זה דורש כ-1.5GB נוספים:
+   `docker compose --profile core --profile nifi up -d nifi`.
+   - פותחים https://localhost:8443/nifi (`ipp-admin` / `ChangeMe-Dev-Only-12`), ונכנסים לקבוצה **IPP ingest (whitening)**. ההוראות לייבוא הראשון נמצאות ב-[NIFI.md](NIFI.md).
+   - `node scripts/ingest/make-nifi-batch.mjs ok`: הקובץ זורם על המסך דרך List, Fetch, Verify ו-Publish to Kafka, ומגיע ל-Archive. המונים על החיצים מתעדכנים כל כמה שניות.
+   - `node scripts/ingest/make-nifi-batch.mjs tamper`: אותו קובץ יוצא בענף **Quarantine**. ב-`ingest/quarantine` נוצר `<name>.reason` עם `HASH_MISMATCH`.
+   - **מה מסבירים:** NiFi אחראי על התזמור (האזנה, תורים, ניסיונות חוזרים, Kafka). הבדיקות הקריפטוגרפיות נמצאות ב-jar של Java עם טסטים (`libs/ingest-verifier`). לכן השרטוט מובן גם לאנשי תפעול, והלוגיקה נבדקת בקוד.
 
 ## 9:00 · עמידות ו-GAPS (דקה)
 1. `./ipp.ps1 chaos on` (מפיל את mock-state-api). הגשת בקשה מקבלת "מערכות המדינה אינן זמינות – הופנה לפקיד", ואישור נחסם (fail-safe). `./ipp.ps1 chaos off`.

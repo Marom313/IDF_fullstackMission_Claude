@@ -9,8 +9,8 @@
     "loginHint": "Secure sign-in via Keycloak (OIDC + PKCE)",
     "demoUsers": "Demo users (password: Passw0rd!)",
     "language": "Language",
-    "themeDark": "Dark mode",
-    "themeLight": "Light mode",
+    "themeDark": "Night mode",
+    "themeLight": "Day mode",
     "welcome": "Hello {{name}}",
     "roles": "Roles"
   },
