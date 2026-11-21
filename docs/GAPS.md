@@ -48,6 +48,8 @@
 | G-33 | אבטחה | ערוץ ה-chaos (`/api/chaos`) פתוח לכל משתמש מאומת | נועד להדגמה בלייב | רק דרך ה-gateway (JWT). ה-mock עצמו לא חשוף מחוץ ל-localhost | הסרה בפרודקשן (mock-state לא קיים שם) | 🟢 | S |
 | G-34 | תפעול | Observability בסיסי: metrics ודשבורד, בלי alerting, בלי distributed tracing ובלי ריכוז לוגים | זמן | Prometheus ו-Grafana עם RED metrics, correlation-id בכל לוג ובכל אירוע Kafka, ולוגים ב-JSON | Alertmanager (p95 ו-5xx), OpenTelemetry tracing, ו-Loki/ELK ארגוני | 🟠 | S |
 | G-17 | תהליך | המערכת נבנתה בפחות מ-48 שעות | לוח הזמנים של הראיון | קו MVP מוגדר, `verify` ירוק בכל שלב, ותיעוד מלא (SPEC, ADR, WORKLOG) | סקירת קוד של צוות, ו-hardening לפי ממצאי מסמך זה | 🟢 | M |
+| G-35 | רשת סגורה | זרימת NiFi (branch `cloud/nifi-ingest`, ADR 0008) לא הורצה חי בסביבת הענן | Docker Hub חסום בסביבת סוכן הענן | ה-verifier נבדק ב-13 טסטים, ו-make-batch נבדק מקצה לקצה ב-7 תרחישים. שמות ה-properties נבדקו מול התיעוד של NiFi 2.9. יש fallback בלי NiFi (`scripts/ingest/ingest-direct.sh`). ייבוא הזרימה ב-UI נעשה ידנית, פעם אחת | הרצה חיה אחת. ייבוא אוטומטי דרך NiFi Registry או REST. אשכול NiFi עם TLS ו-LDAP במקום single-user | 🟡 | S |
+| G-36 | רשת סגורה | מפתח החתימה של השולח נוצר מקומית (`make-batch` / `make-nifi-batch`), ורשימת הקבצים שנקלטו ב-NiFi היא קובץ (`/ingest/.receipts`) | דמו: אין PKI ואין HSM | Ed25519. המפתח הפרטי ב-gitignore, ו-NiFi מקבל רק את הציבורי (read-only). כתיבה לקובץ ה-receipts נעשית עם file lock | מפתחות מ-PKI ארגוני או HSM, עם רוטציה ורשימת ביטולים. receipts בטבלה עם unique על sha256 | 🟡 | M |
 
 ## סיכום למראיין
 - **מה מוכן:** ארכיטקטורה מבוזרת מלאה, זרימות מקצה לקצה לכל התפקידים, עמידות (outbox, idempotency, DLT, circuit breaker), 4 שפות, נגישות ותיעוד.
